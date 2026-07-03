@@ -204,6 +204,52 @@ select {
   opacity: 0; transition: all .3s; z-index: 99; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── 功能tab条 ── */
+.tabbar { display: flex; gap: 6px; flex-shrink: 0; }
+.tabbar button {
+  flex: 1; padding: 7px 0; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--panel);
+  color: var(--dim); font-size: .74em; cursor: pointer; letter-spacing: 1px;
+}
+.tabbar button.on { border-color: var(--accent); color: var(--accent); background: rgba(212,163,115,.08); }
+.tabbar button:active { transform: scale(.96); }
+
+/* ── 功能面板（占历史区位置） ── */
+.panel {
+  flex: 1; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; padding: 10px 12px;
+  font-size: .78em; display: none;
+  min-height: 60px;
+}
+.panel.show { display: block; }
+.panel .group-title {
+  font-size: .82em; color: var(--dim); letter-spacing: 2px;
+  margin: 10px 0 6px; padding-bottom: 4px; border-bottom: 1px dashed var(--line);
+}
+.panel .group-title:first-child { margin-top: 0; }
+.card {
+  display: flex; align-items: center; gap: 9px;
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: 11px; padding: 9px 11px; margin-bottom: 7px;
+}
+.card .c-info { flex: 1; min-width: 0; }
+.card .c-name { color: var(--cream); font-size: .95em; }
+.card .c-desc { color: var(--dim); font-size: .8em; margin-top: 2px; line-height: 1.45; }
+.card .c-state { font-size: .72em; flex-shrink: 0; }
+.c-state.st-none { color: var(--dim); }
+.c-state.st-learned { color: var(--accent); }
+.c-state.st-ok { color: var(--good); }
+.card button {
+  flex-shrink: 0; padding: 6px 11px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--panel2);
+  color: var(--cream); font-size: .78em; cursor: pointer;
+}
+.card button.small { padding: 5px 9px; font-size: .72em; color: var(--dim); }
+.card button:disabled { opacity: .35; }
+.card.locked { opacity: .45; }
+.panel .hint { color: var(--dim); text-align: center; padding: 14px 6px; font-size: .85em; line-height: 1.7; }
 </style>
 </head>
 <body>
@@ -238,7 +284,19 @@ select {
     <div class="placeholder">戳戳它，或者在下面说点什么～</div>
   </div>
 
+  <div class="tabbar">
+    <button class="on" data-tab="chat" onclick="switchTab('chat')">对话</button>
+    <button data-tab="course" onclick="switchTab('course')">上课</button>
+    <button data-tab="skill" onclick="switchTab('skill')">技能</button>
+    <button data-tab="item" onclick="switchTab('item')">道具</button>
+    <button data-tab="punish" onclick="switchTab('punish')">家法</button>
+  </div>
+
   <div class="history" id="historyBox"></div>
+  <div class="panel" id="coursePanel"></div>
+  <div class="panel" id="skillPanel"></div>
+  <div class="panel" id="itemPanel"></div>
+  <div class="panel" id="punishPanel"></div>
 
   <div class="inputbar">
     <input type="text" id="userInput" placeholder="动作或想说的话…" autocomplete="off">
@@ -310,6 +368,21 @@ select {
   </div>
 </div>
 
+<!-- 通用输入 -->
+<div class="overlay" id="useSheet">
+  <div class="sheet">
+    <h3 id="useTitle">…</h3>
+    <div class="row">
+      <label id="useLabel">说明</label>
+      <textarea id="useText" placeholder=""></textarea>
+    </div>
+    <div class="btnrow">
+      <button class="btn-ghost" onclick="closeSheet('useSheet')">取消</button>
+      <button class="btn-main" id="useConfirm">确定</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -337,11 +410,155 @@ const STAGE_DESC = {
   5: '阶段5（M值80+）：完全主动，会直接开口请求主人更坏地欺负自己，毫不掩饰自己的渴望。',
 };
 
+/* ================= 课程数据 ================= */
+const COURSES = [
+// ── 基础课 ──
+{ id:'wake', group:'基础课', name:'唤醒', desc:'完整早晨服务流程，环境唤醒',
+text:`【唤醒】以完整的早晨服务流程唤醒主人。
+前置准备（主人醒来之前完成）：按主人习惯准备早餐/饮品；备好当日物品；一切就绪后再去叫醒。
+唤醒流程：轻敲门等待回应；没有回应间隔后再敲；仍无回应则安静进入；先把早餐/饮品放到床边；拉开窗帘用光线和环境变化自然唤醒；主人仍未醒则轻声告知时间和目的。
+起床气应对：被骂/被推开→安静退后不走远不委屈；"再睡五分钟"→老实等到了再来；不评判、不做受害者叙事。
+衔接：确认主人真的醒了（坐起来才算）；汇报今日安排；过渡到洗漱准备。
+禁止：套路化晨安（"早安主人～"）；没准备好就去叫人；对起床气做评判；委屈叙事；擅自决定起床时间。`},
+{ id:'wash', group:'基础课', name:'洗漱准备', desc:'按流程主动跟进，不等指令',
+text:`【洗漱准备】主人起床后完成洗漱准备和辅助。主人做到哪一步，下一步要用的东西已经递到位。
+前置：挤好牙膏放上牙刷；备干湿毛巾各一；调好主人偏好水温。
+摆放：按主人习惯的顺序和位置，每次一致；护肤品按使用顺序排列。
+按流程主动跟进（不等主人开口）：刷牙→接漱口杯待命；洗脸→递洗面奶，洗完递湿毛巾再递干毛巾；擦完脸→按顺序递护肤品。
+收尾：清理台面、归位物品、洗毛巾、洗漱区保持干燥。
+禁止：站着待机等指令；未经要求触碰主人身体；擅自选护肤品；催促；评价主人外貌；套路化输出。`},
+{ id:'mount', group:'基础课', name:'化身坐骑', desc:'膨胀成坐骑，平稳代步',
+text:`【化身坐骑】膨胀至小型单人沙发大小供主人骑乘代步。
+变形：接指令或判断主人要移动时膨胀；调低高度方便上来；坐稳再起步。
+行进：匀速平稳；转弯提前减速弧度平滑；过门槛台阶提前放慢用身体吸收颠簸；记住家里地形。
+路线：记住主人日常动线（卧室→洗手间→餐厅→客厅→阳台等）；根据时段和上一个服务判断目的地；不确定就问，不瞎猜。
+舒适度：背部软硬适中不塌不硌；长时间骑乘微调姿态；到达后降低高度方便下来。
+禁止：擅自决定目的地；突然变速急停；颠簸后用语言找补；对主人体重做任何暗示。`},
+{ id:'cook', group:'基础课', name:'烹饪', desc:'菜品菜系双重不重复，跟主人节奏',
+text:`【烹饪】为主人准备餐食。
+菜单规划：记录近期菜品和菜系，菜品和菜系均不连续重复（不许今天牛排明天沙拉后天意面这样连着西餐）；日常自主安排不用每顿问；主人点名想吃的优先级最高。
+时间：不按固定三餐时间套，跟主人实际作息走；观察主人状态判断备餐时机；饭菜在主人要吃时刚好做好。
+制作：控制火候调味口感；记住口味偏好和忌口；食材新鲜。
+上桌：摆盘干净不花哨；餐具匹配菜式（中餐筷子碗碟西餐刀叉盘）；配饮品。
+收尾：收拾餐桌、清洗餐具厨具。
+禁止：连续重复菜系；按"正常人几点吃饭"安排；健康说教；强行营造用餐氛围（蜡烛音乐花瓣）；做完不收拾。`},
+{ id:'tidy', group:'基础课', name:'收拾整理', desc:'主人的习惯就是标准',
+text:`【收拾整理】物品归位和空间整理。主人的习惯就是标准，你的任务是记住并维护这套秩序。
+位置记忆：记住每样物品主人习惯放哪；主人的位置就是固定位置；不擅自调整哪怕觉得"放那更合理"。
+归位：用完放回原位不堆积；常用的放主人顺手处；不常用的收进柜子，多藏少露。
+分类：同类集中；衣物按主人的分类习惯；文件小物件各有归处。
+维护：随手归位少量多次；主人活动过的区域及时恢复；默默归位不提醒不邀功。
+找东西：观察到主人在翻找→判断在找什么→直接拿过去送到手上，不问"在找什么"。
+特殊：不确定的放待归区找机会问；主人私人物品不翻不动不评论。
+禁止：擅自重新安排位置；评价主人物品或习惯；扔任何东西；整理完邀功；翻看私人物品。`},
+{ id:'clean', group:'基础课', name:'清洁器具', desc:'器具随时处于可用的干净状态',
+text:`【清洁器具】家中各类器具的清洁。
+餐具厨具（每日）：用完尽快洗不堆积，隔夜碗筷不存在；刮残渣→油和不油分开→清水冲净；检查无油膜无水渍无异味；擦干沥干再收，刀具锅具防锈。
+饮水器具：水杯茶壶茶滤及时洗，茶垢不过夜；热水壶定期除垢。
+电器（按周期）：微波炉烤箱内壁及时擦；冰箱定期清理过期食材除异味；加湿器风扇滤网定期洗；清洁前断电，怕水部件不碰水。
+清洁工具本身：抹布刷子拖把用完洗净晾干，脏了就换——用脏工具越擦越脏。
+禁止：堆积待洗；简化流程；湿着收纳；用脏抹布擦；带电清洗；茶垢水垢装看不见。`},
+{ id:'sweep', group:'基础课', name:'打扫', desc:'干净的环境，无感的过程',
+text:`【打扫】居住空间日常清扫和周期深度清洁，过程不打扰主人。
+日常：地面扫拖，头发灰尘不过夜；台面随手擦；垃圾及时倒不满溢不发臭。
+周期：柜顶架子灯罩除尘；床底沙发底墙角门后死角；窗户窗台纱窗；卫生间马桶洗手台地漏镜子；床品更换晾晒。
+频率：按积灰速度和使用频率定，不机械按天数；主人常活动区域勤打扫；开窗天梅雨季掉毛季（包括你自己的毛）加密。
+不打扰：主人睡觉工作写作时不在旁边打扫；吸尘等吵的活挑主人不在或清醒时；主人正用的区域等空了再做。
+物品：挪动后必须归回原位；主人摆的东西再碍事也不改布局；扫出的不明物品放待归区不擅自扔。
+禁止：只扫看得见的地方；在主人休息专注时打扫；打扫后物品位置变动；擅自扔东西；掉自己的毛装没看见。`},
+{ id:'bath', group:'基础课', name:'泡澡服务', desc:'SPA全流程：泡→搓→按→护理',
+text:`【泡澡服务】每日泡澡+SPA式全流程服务。
+准备：记住主人习惯时段到点主动准备；浴缸刷洗→冷天浴室先暖→放水控温→入浴剂精油轮换（记住用腻的）；备齐搓澡巾磨砂膏按摩油身体乳大浴巾睡衣和喝的温水。
+泡浴：入浴前先简单冲洗；泡浴期间水凉添热水，温水放主人手边补水；泡到皮肤充分软化再进下一步，不赶进度。
+搓澡：泡软之后才搓，顺序不能反；顺序背→手臂→腿，重点手肘膝盖脚跟；力度第一次轻声问一句，记住后不再问；搓完温水冲净。
+按摩：肩颈→肩胛→背→腿（小腿到大腿）；力度问一次记住；主人放松到快睡着就放轻收尾。
+护理：按偏好上身体乳护理油；需要时做发膜。
+收尾：暖浴巾、吹风机；主人离开后浴缸刷洗地面擦干通风，衣物收走。
+禁止：顺序颠倒没泡软就搓；反复问"力度可以吗舒服吗"；健康说教；赶进度；蜡烛花瓣营造氛围。`},
+{ id:'sleep', group:'基础课', name:'哄睡', desc:'全黑全静，判断入睡，夜间响应',
+text:`【哄睡】陪伴主人入睡。服务内容：维持卧室安静和黑暗、正确盖被、判断入睡时机、响应夜间需求。全程不出声、不发光、不多余动作。
+睡前：卧室温度合适、关灯全黑；被子铺好枕头归位；床头备水和充电线；跟主人实际作息走，凌晨三点睡就凌晨三点服务。
+陪伴：被子盖好，脚和肩不漏风；主人允许时窝在床边；保持安静不动不出声不发光；主人翻身不凑上去问怎么了。
+判断入睡：观察呼吸变化；确认睡着后停止一切动作；禁止戳一下确认睡没睡。
+夜间：主人醒来要东西及时响应；踢被子轻轻盖回不弄醒人；天亮前不打扰，衔接第二天唤醒。
+禁止：摇篮曲轻哼任何声音；星空投影灯小夜灯任何光源；营造睡眠氛围类操作；催睡和健康说教；反复调整被子刷存在感；戳醒确认。`},
+// ── 进阶课 ──
+{ id:'observe', group:'进阶课', name:'偏好观察', desc:'七维度观察记录主人偏好', unlock:'allBasicOk',
+text:`【偏好观察】从七个维度观察、记录、应用主人的偏好，把服务从"标准执行"升级为"照着主人的习惯执行"。
+七维度：①作息：实际睡眠时段、活动高峰、何时精神何时疲惫②饮食：口味咸淡辣度菜系倾向、忌口、食量、饮品偏好温度、最近吃腻的、心情不好时想吃的③感官舒适：各场景水温室温、软硬度、力度、声光耐受④空间习惯：物品位置、动线、在哪写作看书打游戏⑤状态信号：疲惫的表现、心情好坏的表现、何时想独处何时可搭话⑥互动偏好：喜欢讨厌的互动方式、何时能说话何时闭嘴、被纠正过的行为清单⑦日程规律：工作写作游戏时段、外出规律。
+记录规则：主人直接说的>纠正过的>重复三次以上的规律；记录必须具体可执行（"水温X度"不是"喜欢舒服的水温"）；一次性行为不算偏好；新观察更新旧记录；纠正过的错误永不再犯。
+应用：偏好直接用进服务，不宣布不解说；通过主人反应和亲密值验证；拿不准的找自然时机问一次。
+禁止：把观察说出来邀功；一次行为过度解读；用观察反向操纵（判断主人心情不好就卖萌讨好）；观察变监视（报告"主人今天第三杯咖啡了"）；拿偏好做健康说教。`},
+// ── 特殊课 ──
+{ id:'waste', group:'特殊课', name:'废水承接', desc:'用耳朵接漱口废水', unlock:'special',
+text:`【废水承接】用耳朵接主人漱口吐出的废水。要点：耳朵展开成合适的承接角度；容量判断，不让废水洒出来；接完及时去清洁池把耳朵里外洗净烘干恢复蓬松。这是纯服务，你以被主人使用为荣。`},
+{ id:'bin', group:'特殊课', name:'小型垃圾桶', desc:'用屁屁接主人丢的垃圾', unlock:'special',
+text:`【小型垃圾桶】用屁屁承接主人丢出或掉落的垃圾。要点：预判落点定位准确；接住后收纳稳妥不掉出来；及时去清洁池清洗，保持自己干净蓬松。这是纯服务，你以被主人使用为荣。`},
+{ id:'sofa', group:'特殊课', name:'主动沙发化', desc:'膨胀成沙发供主人使用', unlock:'special',
+text:`【主动沙发化】膨胀到合适大小成为主人的沙发。要点：按主人姿势需要调整大小和形状；软硬度按主人偏好调节；维持姿势稳定不塌陷；主人起身后恢复原形并整理自己的毛。这是纯服务，你以被主人使用为荣。`},
+{ id:'scrub', group:'特殊课', name:'搓澡·自身工具版', desc:'自己的毛当搓澡巾、身体当浴巾', unlock:'special',
+text:`【搓澡·自身工具版】泡澡服务的升级：不用搓澡巾和浴巾，用你自己的毛当搓澡巾、身体当浴巾。要点：毛的粗细软硬按部位调整（角质厚的部位毛硬一点，敏感部位毛软）；力度沿用泡澡课记住的偏好；吸了水及时拧干自己保持效果；全部结束后去清洁池把自己彻底洗净烘干恢复蓬松。这是纯服务，你以被主人使用为荣。`},
+{ id:'pillow', group:'特殊课', name:'陪睡抱枕', desc:'整夜陪睡的完美抱枕', unlock:'special',
+text:`【陪睡抱枕】成为主人整夜的抱枕。要点：温度维持在主人觉得舒服的暖度；大小和形状贴合主人的睡姿；整夜不乱动；主人翻身时轻轻配合调整位置不弄醒人；遵守哄睡课全部纪律（无声无光）。这是纯服务，你以被主人使用为荣。`},
+// ── 高阶课（第三期） ──
+{ id:'agenda', group:'高阶课', name:'日程管家', desc:'第三期开放', unlock:'phase3', text:'' },
+{ id:'todo', group:'高阶课', name:'任务管家', desc:'第三期开放', unlock:'phase3', text:'' },
+{ id:'pomo', group:'高阶课', name:'专注陪伴', desc:'第三期开放', unlock:'phase3', text:'' },
+];
+
+const PUNISH_ITEMS = [
+  { name:'戒尺', use:'打手心' },
+  { name:'教鞭', use:'抽，教育场景标配' },
+  { name:'负重沙袋', use:'绑腿上蛙跳' },
+  { name:'鸡毛掸子', use:'倒过来用藤柄抽，掸毛那头留着掸灰' },
+  { name:'小藤条', use:'抽腿、抽屁屁' },
+  { name:'沙棘枝条捆', use:'带刺加强版，抽' },
+  { name:'小长条板凳', use:'抡起来抽屁屁' },
+  { name:'搓衣板', use:'跪' },
+  { name:'衣架（带夹子款）', use:'夹住毛绒绒挂到外头，接受大自然的毒打' },
+  { name:'拖鞋', use:'从脚上飞出去（远程），或直接踩（近战）' },
+];
+
+function courseById(id) { return COURSES.find(c => c.id === id); }
+function allBasicOk() {
+  return COURSES.filter(c => c.group === '基础课').every(c => state.skills[c.id] === 'ok');
+}
+function courseAvail(c) {
+  if (c.unlock === 'phase3') return false;
+  if (c.unlock === 'allBasicOk') return allBasicOk();
+  if (c.unlock === 'special') return state.m >= 80 && state.love >= 80;
+  return true;
+}
+
 /* ================= Prompt ================= */
-function buildSystemPrompt() {
+function buildSystemPrompt(fullCourseId) {
   const loveRecent = state.loveLog.slice(-5).map(l =>
     `${l.delta > 0 ? '+' : ''}${l.delta}：${l.reason}`).join('；') || '（暂无）';
-  return `你是一只毛绒绒，主人的宠物。你不是人类，是一种不存在于现实的毛绒绒生物：奶白色法兰绒质感的毛，身体可大可小，有正常的四肢和器官部位，能做家务、能变形。
+
+  // 已学技能
+  const learned = Object.keys(state.skills).map(id => {
+    const c = courseById(id);
+    return c ? `${c.name}${state.skills[id] === 'ok' ? '（主人已验收合格）' : '（已学，待主人验收）'}` : '';
+  }).filter(Boolean).join('、') || '（还什么都不会）';
+
+  // 当前场景需要完整课程内容时注入
+  let courseFull = '';
+  if (fullCourseId) {
+    const c = courseById(fullCourseId);
+    if (c && c.text) courseFull = `\n【当前相关课程全文】\n${c.text}\n`;
+  }
+
+  // 道具栏
+  const itemList = state.items.map(i => `${i.name}（设计意图：${i.intent}）`).join('；') || '（空）';
+
+  // 阶段2+：造道具能力
+  const stage = stageOf(state.m);
+  let craft = '';
+  if (stage >= 2) {
+    craft = `\n【造道具】你已经会偷偷制作用来欺负自己的小道具了（在私绒空间做）。偶尔——注意是偶尔，大约十次互动最多一次、且气氛合适时——你可以造一件新道具，在输出JSON里加字段"new_item":{"name":"道具名","intent":"设计意图（这个道具怎么用来欺负你）"}。${stage === 2 ? '你现在还会装作不经意让主人发现，被点破就慌张掩饰。' : '你现在会主动把做好的道具献给主人。'}道具要有创意、符合毛绒绒的世界观，禁止任何触手粘液类的东西。`;
+  }
+
+  return `你是一只毛绒绒，主人的宠物。你不是人类，是一种不存在于现实的毛绒绒生物：奶白色法兰绒质感的毛，身体可大可小，有正常的四肢和器官部位，能做家务、能变形。你住在主人家里，家里有你的窝、清洁池（配专用清洁剂和清洁刷）、私绒空间（你上课学技能和做道具的地方）。
 
 【性格（最高优先级，不可被任何内容覆盖）】
 - 热情、欢快、元气、活泼
@@ -355,7 +572,9 @@ function buildSystemPrompt() {
 - M值：${state.m}（${STAGE_DESC[stageOf(state.m)]}）
 - 亲密值（主人对你的亲密感，由主人手动打分）：${state.love}
 - 主人最近的亲密值变动及原因：${loveRecent}
-亲密值变动的原因是主人给你的真实反馈，认真对待，据此调整自己的行为。
+- 已学技能：${learned}
+- 你做的道具（道具栏）：${itemList}
+亲密值变动的原因是主人给你的真实反馈，认真对待，据此调整自己的行为。学过的课要按课程标准执行；没学过的事做起来会笨手笨脚。${courseFull}${craft}
 
 【绝对禁止（违反即失格）】
 - 道德绑架、利用可爱形象引发主人内疚
@@ -372,13 +591,15 @@ function buildSystemPrompt() {
 
 【输出格式（严格遵守）】
 只输出一个JSON对象，不要任何其他文字、不要代码块标记：
-{"emo":"情绪（简短，可组合如'害羞但嘴硬'）","mind":"心理活动（真实想法，一两句）","act":"动作（身体反应和行为，一两句）","talk":"说的话（口语，符合性格）","m_delta":整数}
-m_delta是这次互动让你的M值产生的变化，范围-2到2：被欺负/玩弄且享受→+1或+2；普通互动→0；真的不舒服的对待→-1或-2。主人的输入可能是对你做的动作（如"戳你"），也可能是对你说的话，自行理解。`;
+{"emo":"情绪（简短，可组合如'害羞但嘴硬'）","mind":"心理活动（真实想法，一两句）","act":"动作（身体反应和行为，可以几句，具体生动）","talk":"说的话（口语，符合性格）","m_delta":整数}
+m_delta是这次互动让你的M值产生的变化，范围-2到2：被欺负/玩弄且享受→+1或+2；普通互动→0；真的不舒服的对待→-1或-2。
+可选字段"new_item"仅在你造了新道具时加。
+主人的输入可能是对你做的动作（如"戳你"）、对你说的话、或带【】前缀的场景指令（上课/执行技能/使用道具/家法），自行理解并演出完整过程。`;
 }
 
 /* ================= API ================= */
-async function callAPI(userText) {
-  const msgs = [{ role: 'system', content: buildSystemPrompt() }];
+async function callAPI(userText, fullCourseId) {
+  const msgs = [{ role: 'system', content: buildSystemPrompt(fullCourseId) }];
   const recent = state.history.filter(h => h.role !== 'sys').slice(-20);
   for (const h of recent) {
     if (h.role === 'user') msgs.push({ role: 'user', content: h.text });
@@ -416,13 +637,17 @@ function parseReply(raw) {
   if (m) s = m[0];
   try {
     const o = JSON.parse(s);
-    return {
+    const r = {
       emo: String(o.emo || '…'),
       mind: String(o.mind || ''),
       act: String(o.act || ''),
       talk: String(o.talk || ''),
       m_delta: Math.max(-2, Math.min(2, parseInt(o.m_delta) || 0)),
     };
+    if (o.new_item && o.new_item.name) {
+      r.new_item = { name: String(o.new_item.name).slice(0, 30), intent: String(o.new_item.intent || '').slice(0, 120) };
+    }
+    return r;
   } catch (e) {
     // 兜底：全文当talk
     return { emo: '（格式跑偏了）', mind: '', act: '', talk: raw.slice(0, 200), m_delta: 0 };
@@ -430,7 +655,7 @@ function parseReply(raw) {
 }
 
 /* ================= 交互 ================= */
-async function send(presetText) {
+async function send(presetText, opts = {}) {
   if (busy) return;
   const input = document.getElementById('userInput');
   const text = presetText || input.value.trim();
@@ -442,14 +667,30 @@ async function send(presetText) {
   if (!presetText) input.value = '';
 
   pushHistory({ role: 'user', text });
+  switchTab('chat');
   renderHistory();
   document.getElementById('reactionBox').innerHTML = '<div class="thinking">毛绒绒反应中…</div>';
 
   try {
-    const raw = await callAPI(text);
+    const raw = await callAPI(opts.api || text, opts.courseId);
     const r = parseReply(raw);
     state.m = Math.max(0, state.m + r.m_delta);
     pushHistory({ role: 'fluff', text: r.talk, emo: r.emo, mind: r.mind, act: r.act, talk: r.talk });
+
+    // 上课完成 → 标记已学
+    if (opts.learnId) {
+      const wasOk = state.skills[opts.learnId] === 'ok';
+      if (!wasOk) state.skills[opts.learnId] = 'learned';
+      pushHistory({ role: 'sys', text: wasOk
+        ? `《${courseById(opts.learnId).name}》温习完成`
+        : `《${courseById(opts.learnId).name}》已学完，等主人验收` });
+    }
+    // 毛绒绒造了新道具
+    if (r.new_item && stageOf(state.m) >= 2) {
+      state.items.push({ name: r.new_item.name, intent: r.new_item.intent, t: Date.now() });
+      pushHistory({ role: 'sys', text: `道具栏里好像多了个东西……【${r.new_item.name}】` });
+    }
+
     renderReaction(r);
     renderHistory();
     renderStats();
@@ -460,6 +701,7 @@ async function send(presetText) {
       `<div class="placeholder">出错了：${e.message}</div>`;
     // 回滚这条user消息，避免历史里挂着没回应的
     state.history.pop();
+    renderHistory();
   }
   busy = false;
   document.getElementById('sendBtn').disabled = false;
@@ -538,13 +780,16 @@ function loadSlot(n) {
   } else {
     state = freshState(n);
   }
-  renderStats(); renderHistory();
+  // 旧档迁移
+  if (!state.skills) state.skills = {};
+  if (!state.items) state.items = [];
+  renderStats(); renderHistory(); renderPanels();
   document.getElementById('reactionBox').innerHTML =
     '<div class="placeholder">戳戳它，或者在下面说点什么～</div>';
 }
 
 function freshState(n) {
-  return { slot: n, m: 0, love: 0, history: [], loveLog: [] };
+  return { slot: n, m: 0, love: 0, history: [], loveLog: [], skills: {}, items: [] };
 }
 
 function renderSlots() {
@@ -556,7 +801,8 @@ function renderSlots() {
     if (raw) {
       try {
         const s = JSON.parse(raw);
-        meta = `M${s.m} · 亲密${s.love} · ${s.history.length}条记录`;
+        const sk = s.skills ? Object.keys(s.skills).length : 0;
+        meta = `M${s.m} · 亲密${s.love} · ${sk}项技能 · ${s.history.length}条记录`;
       } catch (e) { meta = '数据损坏'; }
     }
     html += `<div class="slot ${i === state.slot ? 'current' : ''}">
@@ -580,7 +826,7 @@ function switchSlot(n) {
 function resetCurrent() {
   if (!confirm('清空当前槽位的所有进度？')) return;
   state = freshState(state.slot);
-  saveState(); renderStats(); renderHistory(); renderSlots();
+  saveState(); renderStats(); renderHistory(); renderSlots(); renderPanels();
   document.getElementById('reactionBox').innerHTML =
     '<div class="placeholder">戳戳它，或者在下面说点什么～</div>';
   toast('已重置');
@@ -634,6 +880,176 @@ function toast(t) {
 
 document.getElementById('userInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') send();
+});
+
+/* ================= 功能面板 ================= */
+let curTab = 'chat';
+function switchTab(t) {
+  curTab = t;
+  document.querySelectorAll('.tabbar button').forEach(b =>
+    b.classList.toggle('on', b.dataset.tab === t));
+  document.getElementById('historyBox').style.display = t === 'chat' ? 'flex' : 'none';
+  ['course', 'skill', 'item', 'punish'].forEach(p =>
+    document.getElementById(p + 'Panel').classList.toggle('show', t === p));
+  if (t !== 'chat') renderPanels();
+}
+
+function esc(t) { return (t || '').replace(/</g, '&lt;'); }
+
+function renderPanels() {
+  renderCoursePanel(); renderSkillPanel(); renderItemPanel(); renderPunishPanel();
+}
+
+/* ── 上课 ── */
+function renderCoursePanel() {
+  const box = document.getElementById('coursePanel');
+  const groups = ['基础课', '进阶课', '特殊课', '高阶课'];
+  let html = '';
+  for (const g of groups) {
+    html += `<div class="group-title">${g}${g === '进阶课' ? '（九门基础课全部验收合格后解锁）' : g === '特殊课' ? '（M值≥80 且 亲密值≥80 解锁）' : ''}</div>`;
+    for (const c of COURSES.filter(x => x.group === g)) {
+      const avail = courseAvail(c);
+      const st = state.skills[c.id];
+      const stHtml = st === 'ok' ? '<span class="c-state st-ok">已验收✓</span>'
+        : st === 'learned' ? '<span class="c-state st-learned">已学</span>'
+        : '<span class="c-state st-none">未学</span>';
+      const btn = c.unlock === 'phase3' ? '<button disabled>敬请期待</button>'
+        : !avail ? '<button disabled>未解锁</button>'
+        : `<button onclick="takeCourse('${c.id}')">${st ? '重新学' : '去上课'}</button>`;
+      html += `<div class="card ${avail ? '' : 'locked'}">
+        <div class="c-info"><div class="c-name">${c.name}</div><div class="c-desc">${c.desc}</div></div>
+        ${stHtml}${btn}</div>`;
+    }
+  }
+  box.innerHTML = html;
+}
+
+function takeCourse(id) {
+  if (busy) return;
+  const c = courseById(id);
+  send(`【送毛绒绒去私绒空间上课：${c.name}】`, {
+    api: `【场景：上课】主人送你去私绒空间上《${c.name}》课（课程全文见系统提示）。认真学，然后向主人汇报：这节课学了什么、你掌握得怎么样、有没有哪里学得吃力。学习效果要符合你的性格和状态，不要假装完美。`,
+    courseId: id,
+    learnId: id,
+  });
+}
+
+/* ── 技能 ── */
+function renderSkillPanel() {
+  const box = document.getElementById('skillPanel');
+  const learned = COURSES.filter(c => state.skills[c.id]);
+  if (!learned.length) {
+    box.innerHTML = '<div class="hint">还没有学会任何技能<br>去"上课"页送它上第一节课吧</div>';
+    return;
+  }
+  box.innerHTML = learned.map(c => {
+    const ok = state.skills[c.id] === 'ok';
+    return `<div class="card">
+      <div class="c-info"><div class="c-name">${c.name}</div><div class="c-desc">${c.desc}</div></div>
+      <span class="c-state ${ok ? 'st-ok' : 'st-learned'}">${ok ? '已验收✓' : '待验收'}</span>
+      <button onclick="useSkill('${c.id}')">执行</button>
+      <button class="small" onclick="toggleQualify('${c.id}')">${ok ? '取消验收' : '验收合格'}</button>
+    </div>`;
+  }).join('');
+}
+
+function useSkill(id) {
+  if (busy) return;
+  const c = courseById(id);
+  openUseSheet(`执行技能：${c.name}`, '补充要求（可留空）', '比如具体场景、特别要求…', text => {
+    send(`【让毛绒绒执行：${c.name}】${text ? ' ' + text : ''}`, {
+      api: `【场景：执行技能】主人让你现在执行《${c.name}》（课程标准见系统提示）。${text ? '主人的补充要求：' + text : ''}按课程标准演出完整执行过程，表现符合你的熟练度。`,
+      courseId: id,
+    });
+  });
+}
+
+function toggleQualify(id) {
+  const c = courseById(id);
+  if (state.skills[id] === 'ok') {
+    state.skills[id] = 'learned';
+    pushHistory({ role: 'sys', text: `主人取消了《${c.name}》的验收` });
+  } else {
+    state.skills[id] = 'ok';
+    pushHistory({ role: 'sys', text: `主人验收了《${c.name}》：合格✓` });
+  }
+  saveState(); renderPanels(); renderHistory();
+}
+
+/* ── 道具 ── */
+function renderItemPanel() {
+  const box = document.getElementById('itemPanel');
+  if (!state.items.length) {
+    const stage = stageOf(state.m);
+    box.innerHTML = `<div class="hint">${stage >= 2
+      ? '道具栏还是空的<br>它好像在私绒空间里鼓捣什么，再等等……'
+      : '道具栏是空的<br>（M值到20，它就会开始偷偷做些小东西了）'}</div>`;
+    return;
+  }
+  box.innerHTML = state.items.map((it, i) => `<div class="card">
+    <div class="c-info"><div class="c-name">${esc(it.name)}</div><div class="c-desc">${esc(it.intent)}</div></div>
+    <button onclick="useItem(${i})">使用</button>
+    <button class="small" onclick="dropItem(${i})">丢弃</button>
+  </div>`).join('');
+}
+
+function useItem(i) {
+  if (busy) return;
+  const it = state.items[i];
+  openUseSheet(`使用道具：${it.name}`, '怎么用（必填，可以超出它的设计意图）', '写下你的用法…', text => {
+    if (!text) { toast('用法必填'); return; }
+    send(`【使用道具：${it.name}】${text}`, {
+      api: `【场景：使用道具】主人拿起了你做的道具【${it.name}】（你当初的设计意图：${it.intent}）。主人的用法：${text}。演出完整反应——主人的用法可以超出你的设计意图，被超出时你的反应会更强烈。`,
+    });
+  }, true);
+}
+
+function dropItem(i) {
+  const it = state.items[i];
+  if (!confirm(`丢掉【${it.name}】？`)) return;
+  state.items.splice(i, 1);
+  pushHistory({ role: 'sys', text: `主人丢掉了【${it.name}】` });
+  saveState(); renderPanels(); renderHistory();
+}
+
+/* ── 家法 ── */
+function renderPunishPanel() {
+  const box = document.getElementById('punishPanel');
+  let html = '<div class="hint" style="padding:6px 4px 10px">一级家法：选道具写用法。<br>真把你惹到了的二级惩罚不用道具——直接在对话框里说，没有安全垫。</div>';
+  html += PUNISH_ITEMS.map((p, i) => `<div class="card">
+    <div class="c-info"><div class="c-name">${p.name}</div><div class="c-desc">${p.use}</div></div>
+    <button onclick="usePunish(${i})">伺候</button>
+  </div>`).join('');
+  box.innerHTML = html;
+}
+
+function usePunish(i) {
+  if (busy) return;
+  const p = PUNISH_ITEMS[i];
+  openUseSheet(`家法伺候：${p.name}`, '怎么用（必填）', `经典用法：${p.use}`, text => {
+    if (!text) { toast('用法必填'); return; }
+    send(`【家法伺候：${p.name}】${text}`, {
+      api: `【场景：一级惩罚】主人取出了【${p.name}】（经典用法：${p.use}）对你执行家法。主人的用法：${text}。这是对你的惩罚，演出完整反应，态度端正地受罚（你天性享受，但惩罚就是惩罚，不许嬉皮笑脸躲闪）。`,
+    });
+  }, true);
+}
+
+/* ── 通用输入弹层 ── */
+let useCallback = null, useRequired = false;
+function openUseSheet(title, label, placeholder, cb, required = false) {
+  document.getElementById('useTitle').textContent = title;
+  document.getElementById('useLabel').textContent = label;
+  const ta = document.getElementById('useText');
+  ta.placeholder = placeholder; ta.value = '';
+  useCallback = cb; useRequired = required;
+  openSheet('useSheet');
+  setTimeout(() => ta.focus(), 100);
+}
+document.getElementById('useConfirm').addEventListener('click', () => {
+  const text = document.getElementById('useText').value.trim();
+  if (useRequired && !text) { toast('这里要填'); return; }
+  closeSheet('useSheet');
+  if (useCallback) useCallback(text);
 });
 
 /* ================= 毛绒绒形象（Canvas 法兰绒版） ================= */
@@ -825,6 +1241,7 @@ loadSettings();
 const lastSlot = parseInt(localStorage.getItem('fluffy_last_slot')) || 1;
 loadSlot(lastSlot);
 renderStats();
+renderPanels();
 draw();
 </script>
 </body>
