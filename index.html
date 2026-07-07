@@ -1,1248 +1,601 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>毛绒绒</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>波波便携壳</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐾</text></svg>">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #201a2e;
-  --panel: #2a2338;
-  --panel2: #342c44;
-  --line: #453a5c;
-  --text: #efe9f5;
-  --dim: #9c8fb5;
-  --cream: #f5e9d8;
-  --accent: #d4a373;
-  --pink: #e8a0b4;
-  --good: #8fce9f;
-  --bad: #e08585;
+:root{
+  --bg:#faf7f2; --panel:#ffffff; --text:#2d2a26; --sub:#8a827a;
+  --accent:#e8833a; --accent-soft:#fdeadb; --border:#e8e2d9;
+  --user-bubble:#fdeadb; --think-bg:#f4f1ec;
 }
-html, body { height: 100%; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'PingFang SC','Segoe UI','Microsoft YaHei',sans-serif;
-  display: flex; justify-content: center;
-  min-height: 100vh;
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1c1a17; --panel:#26231f; --text:#ece7e0; --sub:#948c82;
+    --accent:#f0954e; --accent-soft:#3a2d20; --border:#38332d;
+    --user-bubble:#3a2d20; --think-bg:#211f1b;
+  }
 }
-.app {
-  width: 100%; max-width: 460px;
-  display: flex; flex-direction: column;
-  height: 100vh; height: 100dvh;
-  padding: 10px 12px;
-  gap: 8px;
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;
+  display:flex; flex-direction:column;
 }
-
-/* ── 顶栏 ── */
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 2px 4px;
+header{
+  display:flex; align-items:center; gap:8px;
+  padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top));
+  background:var(--panel); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:10;
 }
-.title { font-size: .95em; letter-spacing: 4px; color: var(--cream); }
-.top-btns { display: flex; gap: 8px; }
-.icon-btn {
-  background: var(--panel); border: 1px solid var(--line);
-  color: var(--dim); border-radius: 10px;
-  padding: 5px 11px; font-size: .8em; cursor: pointer;
+header h1{font-size:16px; font-weight:600}
+#cost{font-size:12px; color:var(--sub); margin-left:auto; white-space:nowrap}
+header button{
+  border:1px solid var(--border); background:var(--panel); color:var(--text);
+  border-radius:8px; padding:5px 9px; font-size:13px; cursor:pointer;
 }
-.icon-btn:active { transform: scale(.95); }
-
-/* ── 数值条 ── */
-.stats {
-  display: flex; gap: 8px;
+header button:active{background:var(--accent-soft)}
+#status{
+  font-size:12px; color:var(--sub); padding:4px 14px;
+  border-bottom:1px solid var(--border); background:var(--panel);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.stat {
-  flex: 1; background: var(--panel); border: 1px solid var(--line);
-  border-radius: 12px; padding: 7px 12px;
-  display: flex; align-items: baseline; gap: 8px;
+#status.ok{color:#5a9a5a}
+#status.err{color:#c05a5a}
+#chat{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px}
+.msg{max-width:88%; line-height:1.65; font-size:15px; word-break:break-word}
+.msg.user{align-self:flex-end; background:var(--user-bubble); border-radius:14px 14px 4px 14px; padding:9px 13px}
+.msg.assistant{align-self:flex-start; width:100%}
+.msg.assistant .body{white-space:pre-wrap}
+.msg details{
+  background:var(--think-bg); border:1px solid var(--border); border-radius:8px;
+  padding:6px 10px; margin-bottom:8px; font-size:12.5px; color:var(--sub);
 }
-.stat .label { font-size: .68em; color: var(--dim); letter-spacing: 1px; }
-.stat .num { font-size: 1.05em; color: var(--cream); font-weight: 600; }
-.stat .sub { font-size: .62em; color: var(--dim); margin-left: auto; }
-.stat.clickable { cursor: pointer; }
-.stat.clickable:active { background: var(--panel2); }
-
-/* ── 舞台 ── */
-.stage {
-  position: relative;
-  background: radial-gradient(ellipse at 50% 120%, #2d2540 0%, var(--bg) 75%);
-  border-radius: 18px;
-  display: flex; justify-content: center; align-items: center;
-  min-height: 220px;
-  overflow: hidden;
-  flex-shrink: 0;
+.msg details[open] .tk{white-space:pre-wrap; display:block; margin-top:6px; max-height:40vh; overflow-y:auto}
+.msg details summary{cursor:pointer; user-select:none}
+.sys-note{align-self:center; font-size:12px; color:var(--sub); text-align:center; max-width:90%}
+#filebar{
+  display:none; gap:8px; align-items:center; padding:8px 14px;
+  background:var(--accent-soft); border-top:1px solid var(--border); font-size:13px;
 }
-#fluffCanvas { cursor: pointer; touch-action: manipulation; }
-
-/* ── 四维反应区 ── */
-.reaction {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px; padding: 10px 12px;
-  font-size: .8em; line-height: 1.65;
-  min-height: 76px;
-  overflow-y: auto;
-  flex-shrink: 0;
-  max-height: 150px;
+#filebar button{border:none; background:var(--accent); color:#fff; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer}
+#inputbar{
+  display:flex; gap:8px; padding:10px 14px;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom));
+  background:var(--panel); border-top:1px solid var(--border);
+  position:sticky; bottom:0;
 }
-.reaction .dim-row { display: flex; gap: 7px; margin-bottom: 3px; align-items: baseline; }
-.reaction .tag {
-  flex-shrink: 0;
-  font-size: .78em; padding: 1px 8px; border-radius: 8px;
-  letter-spacing: 1px;
+#inputbar textarea{
+  flex:1; resize:none; border:1px solid var(--border); border-radius:12px;
+  padding:9px 12px; font-size:15px; font-family:inherit; line-height:1.5;
+  background:var(--bg); color:var(--text); max-height:120px; outline:none;
 }
-.tag.emo  { background: rgba(232,160,180,.16); color: var(--pink); }
-.tag.mind { background: rgba(156,143,181,.16); color: var(--dim); }
-.tag.act  { background: rgba(212,163,115,.16); color: var(--accent); }
-.tag.talk { background: rgba(143,206,159,.14); color: var(--good); }
-.reaction .placeholder { color: var(--dim); font-size: .9em; text-align: center; padding-top: 18px; }
-.reaction .thinking { color: var(--dim); text-align: center; padding-top: 18px; }
-
-/* ── 历史区 ── */
-.history {
-  flex: 1; overflow-y: auto;
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px; padding: 10px 12px;
-  font-size: .76em; line-height: 1.6;
-  display: flex; flex-direction: column; gap: 8px;
-  min-height: 60px;
+#inputbar textarea:focus{border-color:var(--accent)}
+#send{
+  border:none; background:var(--accent); color:#fff; border-radius:12px;
+  padding:0 18px; font-size:15px; cursor:pointer; flex-shrink:0;
 }
-.msg { max-width: 88%; padding: 6px 11px; border-radius: 12px; word-break: break-word; }
-.msg.user { align-self: flex-end; background: #3d3252; border-bottom-right-radius: 4px; }
-.msg.fluff { align-self: flex-start; background: var(--panel2); border-bottom-left-radius: 4px; }
-.msg.sys { align-self: center; color: var(--dim); background: none; font-size: .88em; padding: 0; }
-.msg .m-emo { color: var(--pink); font-size: .88em; }
-.msg .m-act { color: var(--accent); font-size: .88em; }
-
-/* ── 输入区 ── */
-.inputbar {
-  display: flex; gap: 8px; flex-shrink: 0;
+#send.stop{background:#c05a5a}
+#send:disabled{opacity:.5}
+/* modal */
+.modal{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100;
+  align-items:flex-end; justify-content:center;
 }
-.inputbar input {
-  flex: 1; background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px; padding: 11px 14px;
-  color: var(--text); font-size: .85em; outline: none;
+.modal.show{display:flex}
+.modal .card{
+  background:var(--panel); width:100%; max-width:560px; max-height:88vh; overflow-y:auto;
+  border-radius:16px 16px 0 0; padding:18px;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom));
 }
-.inputbar input:focus { border-color: var(--accent); }
-.inputbar button {
-  background: var(--accent); border: none; border-radius: 14px;
-  color: #2a2338; font-weight: 600; padding: 0 20px;
-  font-size: .85em; cursor: pointer;
+.card h2{font-size:16px; margin-bottom:12px}
+.card label{display:block; font-size:13px; color:var(--sub); margin:10px 0 4px}
+.card input, .card select{
+  width:100%; border:1px solid var(--border); border-radius:8px; padding:8px 10px;
+  font-size:14px; background:var(--bg); color:var(--text);
 }
-.inputbar button:disabled { opacity: .4; }
-.inputbar button:active { transform: scale(.96); }
-
-/* ── 弹层通用 ── */
-.overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.55);
-  display: none; justify-content: center; align-items: center;
-  z-index: 50; padding: 16px;
+.card .hint{font-size:12px; color:var(--sub); margin-top:4px; line-height:1.5}
+.card .row{display:flex; gap:10px}
+.card .row > div{flex:1}
+.card .btns{display:flex; gap:10px; margin-top:16px}
+.card .btns button{
+  flex:1; border:none; border-radius:10px; padding:11px; font-size:15px; cursor:pointer;
 }
-.overlay.show { display: flex; }
-.sheet {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: 18px; padding: 18px;
-  width: 100%; max-width: 400px;
-  max-height: 82vh; overflow-y: auto;
-}
-.sheet h3 { font-size: .9em; color: var(--cream); letter-spacing: 2px; margin-bottom: 14px; }
-.sheet .row { margin-bottom: 13px; }
-.sheet label { display: block; font-size: .72em; color: var(--dim); margin-bottom: 5px; letter-spacing: 1px; }
-.sheet input[type=text], .sheet input[type=password], .sheet textarea {
-  width: 100%; background: var(--bg); border: 1px solid var(--line);
-  border-radius: 10px; padding: 9px 12px;
-  color: var(--text); font-size: .82em; outline: none;
-}
-.sheet textarea { resize: none; height: 64px; }
-.sheet input[type=range] { width: 100%; accent-color: var(--accent); }
-.range-val { font-size: .75em; color: var(--accent); float: right; }
-.sheet .btnrow { display: flex; gap: 8px; margin-top: 16px; }
-.sheet .btnrow button {
-  flex: 1; padding: 10px; border-radius: 12px; border: none;
-  font-size: .82em; cursor: pointer; font-weight: 600;
-}
-.btn-main { background: var(--accent); color: #2a2338; }
-.btn-ghost { background: var(--panel2); color: var(--dim); border: 1px solid var(--line) !important; }
-.btn-danger { background: rgba(224,133,133,.15); color: var(--bad); border: 1px solid rgba(224,133,133,.3) !important; }
-
-/* 亲密值调整 */
-.delta-btns { display: flex; gap: 6px; }
-.delta-btns button {
-  flex: 1; padding: 9px 0; border-radius: 10px; border: 1px solid var(--line);
-  background: var(--bg); color: var(--text); font-size: .85em; cursor: pointer;
-}
-.delta-btns button.sel { border-color: var(--accent); color: var(--accent); background: rgba(212,163,115,.1); }
-
-/* 存档槽位 */
-.slot {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--bg); border: 1px solid var(--line);
-  border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
-}
-.slot .info { flex: 1; font-size: .78em; }
-.slot .info .name { color: var(--cream); }
-.slot .info .meta { color: var(--dim); font-size: .85em; margin-top: 2px; }
-.slot button {
-  padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line);
-  background: var(--panel2); color: var(--dim); font-size: .72em; cursor: pointer;
-}
-.slot.current { border-color: var(--accent); }
-
-select {
-  width: 100%; background: var(--bg); border: 1px solid var(--line);
-  border-radius: 10px; padding: 9px 12px;
-  color: var(--text); font-size: .82em; outline: none;
-  appearance: none;
-}
-
-.toast {
-  position: fixed; top: 18px; left: 50%; transform: translateX(-50%) translateY(-8px);
-  background: var(--panel2); border: 1px solid var(--line);
-  color: var(--cream); font-size: .78em;
-  padding: 8px 18px; border-radius: 20px;
-  opacity: 0; transition: all .3s; z-index: 99; pointer-events: none;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ── 功能tab条 ── */
-.tabbar { display: flex; gap: 6px; flex-shrink: 0; }
-.tabbar button {
-  flex: 1; padding: 7px 0; border-radius: 10px;
-  border: 1px solid var(--line); background: var(--panel);
-  color: var(--dim); font-size: .74em; cursor: pointer; letter-spacing: 1px;
-}
-.tabbar button.on { border-color: var(--accent); color: var(--accent); background: rgba(212,163,115,.08); }
-.tabbar button:active { transform: scale(.96); }
-
-/* ── 功能面板（占历史区位置） ── */
-.panel {
-  flex: 1; overflow-y: auto;
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px; padding: 10px 12px;
-  font-size: .78em; display: none;
-  min-height: 60px;
-}
-.panel.show { display: block; }
-.panel .group-title {
-  font-size: .82em; color: var(--dim); letter-spacing: 2px;
-  margin: 10px 0 6px; padding-bottom: 4px; border-bottom: 1px dashed var(--line);
-}
-.panel .group-title:first-child { margin-top: 0; }
-.card {
-  display: flex; align-items: center; gap: 9px;
-  background: var(--bg); border: 1px solid var(--line);
-  border-radius: 11px; padding: 9px 11px; margin-bottom: 7px;
-}
-.card .c-info { flex: 1; min-width: 0; }
-.card .c-name { color: var(--cream); font-size: .95em; }
-.card .c-desc { color: var(--dim); font-size: .8em; margin-top: 2px; line-height: 1.45; }
-.card .c-state { font-size: .72em; flex-shrink: 0; }
-.c-state.st-none { color: var(--dim); }
-.c-state.st-learned { color: var(--accent); }
-.c-state.st-ok { color: var(--good); }
-.card button {
-  flex-shrink: 0; padding: 6px 11px; border-radius: 9px;
-  border: 1px solid var(--line); background: var(--panel2);
-  color: var(--cream); font-size: .78em; cursor: pointer;
-}
-.card button.small { padding: 5px 9px; font-size: .72em; color: var(--dim); }
-.card button:disabled { opacity: .35; }
-.card.locked { opacity: .45; }
-.panel .hint { color: var(--dim); text-align: center; padding: 14px 6px; font-size: .85em; line-height: 1.7; }
+.btn-main{background:var(--accent); color:#fff}
+.btn-sub{background:var(--border); color:var(--text)}
+.card .filelist{margin:8px 0}
+.card .filelist label{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--text); margin:6px 0; word-break:break-all}
+.card .filelist input{width:auto}
+.card .help{font-size:12.5px; color:var(--sub); line-height:1.7; margin-top:12px; border-top:1px solid var(--border); padding-top:10px}
+.card .help b{color:var(--text)}
 </style>
 </head>
 <body>
-<div class="app">
 
-  <div class="topbar">
-    <div class="title">毛绒绒</div>
-    <div class="top-btns">
-      <button class="icon-btn" onclick="openSheet('saveSheet')">存档</button>
-      <button class="icon-btn" onclick="openSheet('setSheet')">设置</button>
-    </div>
-  </div>
-
-  <div class="stats">
-    <div class="stat">
-      <span class="label">M值</span>
-      <span class="num" id="mVal">0</span>
-      <span class="sub" id="mStage">阶段1</span>
-    </div>
-    <div class="stat clickable" onclick="openSheet('loveSheet')">
-      <span class="label">亲密值</span>
-      <span class="num" id="loveVal">0</span>
-      <span class="sub">点我调整</span>
-    </div>
-  </div>
-
-  <div class="stage">
-    <canvas id="fluffCanvas" width="340" height="220"></canvas>
-  </div>
-
-  <div class="reaction" id="reactionBox">
-    <div class="placeholder">戳戳它，或者在下面说点什么～</div>
-  </div>
-
-  <div class="tabbar">
-    <button class="on" data-tab="chat" onclick="switchTab('chat')">对话</button>
-    <button data-tab="course" onclick="switchTab('course')">上课</button>
-    <button data-tab="skill" onclick="switchTab('skill')">技能</button>
-    <button data-tab="item" onclick="switchTab('item')">道具</button>
-    <button data-tab="punish" onclick="switchTab('punish')">家法</button>
-  </div>
-
-  <div class="history" id="historyBox"></div>
-  <div class="panel" id="coursePanel"></div>
-  <div class="panel" id="skillPanel"></div>
-  <div class="panel" id="itemPanel"></div>
-  <div class="panel" id="punishPanel"></div>
-
-  <div class="inputbar">
-    <input type="text" id="userInput" placeholder="动作或想说的话…" autocomplete="off">
-    <button id="sendBtn" onclick="send()">发送</button>
-  </div>
+<header>
+  <h1>🐾 波波便携壳</h1>
+  <span id="cost"></span>
+  <button id="btn-archive" title="让波波写记忆存档">存档</button>
+  <button id="btn-reload" title="重新拉取记忆">记忆</button>
+  <button id="btn-clear" title="清空本场对话">清空</button>
+  <button id="btn-cfg">设置</button>
+</header>
+<div id="status">未加载记忆</div>
+<div id="chat"></div>
+<div id="filebar">
+  <span id="filebar-text"></span>
+  <button id="btn-commit">提交到 main</button>
 </div>
-
-<!-- 亲密值调整 -->
-<div class="overlay" id="loveSheet">
-  <div class="sheet">
-    <h3>调整亲密值（当前 <span id="loveNow">0</span>）</h3>
-    <div class="row">
-      <label>变动</label>
-      <div class="delta-btns" id="deltaBtns">
-        <button data-d="-3">-3</button><button data-d="-2">-2</button><button data-d="-1">-1</button>
-        <button data-d="1">+1</button><button data-d="2">+2</button><button data-d="3">+3</button>
-      </div>
-    </div>
-    <div class="row">
-      <label>原因（必填，毛绒绒看得到）</label>
-      <textarea id="loveReason" placeholder="为什么加/减这个分…"></textarea>
-    </div>
-    <div class="btnrow">
-      <button class="btn-ghost" onclick="closeSheet('loveSheet')">取消</button>
-      <button class="btn-main" onclick="applyLove()">确定</button>
-    </div>
-  </div>
+<div id="inputbar">
+  <textarea id="input" rows="1" placeholder="CodeCode～"></textarea>
+  <button id="send">发送</button>
 </div>
 
 <!-- 设置 -->
-<div class="overlay" id="setSheet">
-  <div class="sheet">
-    <h3>设置</h3>
+<div class="modal" id="cfg-modal">
+  <div class="card">
+    <h2>设置</h2>
+    <label>Anthropic API Key</label>
+    <input id="cfg-apikey" type="password" placeholder="sk-ant-...">
+    <label>GitHub Token（fine-grained，只授权记忆仓库，Contents 读写）</label>
+    <input id="cfg-ghtoken" type="password" placeholder="github_pat_...">
     <div class="row">
-      <label>DeepSeek API Key</label>
-      <input type="password" id="apiKey" placeholder="sk-…">
+      <div>
+        <label>仓库 owner/repo</label>
+        <input id="cfg-repo" placeholder="zzh-orange/for-clau">
+      </div>
+      <div>
+        <label>分支</label>
+        <input id="cfg-branch" placeholder="main">
+      </div>
     </div>
+    <label>模型</label>
+    <input id="cfg-model" placeholder="claude-fable-5">
     <div class="row">
-      <label>temperature <span class="range-val" id="tempVal">1.3</span></label>
-      <input type="range" id="tempRange" min="0" max="2" step="0.1" value="1.3">
+      <div>
+        <label>max_tokens</label>
+        <input id="cfg-maxtok" type="number" placeholder="8192">
+      </div>
+      <div>
+        <label>思维链</label>
+        <select id="cfg-think">
+          <option value="on">开（透明毛玻璃）</option>
+          <option value="off">关（省钱）</option>
+        </select>
+      </div>
     </div>
-    <div class="row">
-      <label>top_p <span class="range-val" id="toppVal">0.95</span></label>
-      <input type="range" id="toppRange" min="0.1" max="1" step="0.05" value="0.95">
+    <div class="btns">
+      <button class="btn-sub" id="cfg-cancel">取消</button>
+      <button class="btn-main" id="cfg-save">保存</button>
     </div>
-    <div class="row">
-      <label>effort（高 = 用 deepseek-reasoner，反应慢但更聪明）</label>
-      <select id="effortSel">
-        <option value="normal">普通（deepseek-chat）</option>
-        <option value="high">高（deepseek-reasoner）</option>
-      </select>
-    </div>
-    <div class="btnrow">
-      <button class="btn-ghost" onclick="closeSheet('setSheet')">关闭</button>
-      <button class="btn-main" onclick="saveSettings()">保存</button>
+    <div class="help">
+      <b>钥匙怎么领：</b><br>
+      ① API Key：platform.claude.com → 注册/登录 Console → API Keys → Create Key。计费独立于 claude.ai 订阅，充多少用多少，可设上限。<br>
+      ② GitHub Token：github.com → Settings → Developer settings → Fine-grained tokens → 只选记忆仓库一个 repo，权限只给 Contents: Read and write。<br>
+      两把钥匙都只存在这台设备的浏览器里（localStorage），不经过任何第三方服务器——页面直连 Anthropic 和 GitHub 官方 API。
     </div>
   </div>
 </div>
 
-<!-- 存档 -->
-<div class="overlay" id="saveSheet">
-  <div class="sheet">
-    <h3>存档槽位</h3>
-    <div id="slotList"></div>
-    <div class="btnrow">
-      <button class="btn-ghost" onclick="closeSheet('saveSheet')">关闭</button>
-      <button class="btn-danger" onclick="resetCurrent()">重置当前进度</button>
+<!-- 存档提交 -->
+<div class="modal" id="commit-modal">
+  <div class="card">
+    <h2>检测到存档文件</h2>
+    <div class="filelist" id="commit-list"></div>
+    <label>Commit message</label>
+    <input id="commit-msg">
+    <div class="btns">
+      <button class="btn-sub" id="commit-cancel">取消</button>
+      <button class="btn-main" id="commit-go">推到 main</button>
     </div>
   </div>
 </div>
-
-<!-- 通用输入 -->
-<div class="overlay" id="useSheet">
-  <div class="sheet">
-    <h3 id="useTitle">…</h3>
-    <div class="row">
-      <label id="useLabel">说明</label>
-      <textarea id="useText" placeholder=""></textarea>
-    </div>
-    <div class="btnrow">
-      <button class="btn-ghost" onclick="closeSheet('useSheet')">取消</button>
-      <button class="btn-main" id="useConfirm">确定</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-/* ================= 状态 ================= */
-const SLOT_COUNT = 3;
-let state = {
-  slot: 1,
-  m: 0,
-  love: 0,
-  history: [],       // {role:'user'|'fluff'|'sys', text, emo?, mind?, act?, talk?}
-  loveLog: [],       // {delta, reason, t}
-};
-let settings = {
-  apiKey: '', temp: 1.3, topp: 0.95, effort: 'normal',
-};
-let busy = false;
+'use strict';
+/* ========== 状态 ========== */
+const LS = { cfg:'bobo_cfg', chat:'bobo_chat', stats:'bobo_stats' };
+let cfg = load(LS.cfg) || { repo:'zzh-orange/for-clau', branch:'main', model:'claude-fable-5', maxtok:8192, think:'on' };
+let messages = load(LS.chat) || [];            // [{role, text, thinking?}]
+let stats = load(LS.stats) || { in:0, out:0, cw:0, cr:0 }; // input/output/cache-write/cache-read tokens
+let systemPrompt = null;                       // 组装好的记忆系统提示词
+let pendingFiles = null;                       // 待提交的存档文件 [{path, content}]
+let controller = null;                         // AbortController
 
-function stageOf(m) { return Math.min(5, Math.floor(m / 20) + 1); }
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 
-const STAGE_DESC = {
-  1: '阶段1（M值0-19）：暗搓搓期待被欺负。被动，嘴上抗拒身体诚实，被玩弄时嘴上说不要但明显很享受，绝不主动开口要求。',
-  2: '阶段2（M值20-39）：偷偷期待更多。半主动，会装作不经意地制造被欺负的机会，装成意外，被发现意图就慌张掩饰。',
-  3: '阶段3（M值40-59）：主动求被玩。会用请求的姿态主动请主人玩弄自己，被拒绝会失落但不纠缠。',
-  4: '阶段4（M值60-79）：积极主动且有创造力，会主动提出新的被玩弄方式，兴致勃勃。',
-  5: '阶段5（M值80+）：完全主动，会直接开口请求主人更坏地欺负自己，毫不掩饰自己的渴望。',
-};
+const $ = id => document.getElementById(id);
+const chatEl = $('chat'), statusEl = $('status'), inputEl = $('input'), sendBtn = $('send');
 
-/* ================= 课程数据 ================= */
-const COURSES = [
-// ── 基础课 ──
-{ id:'wake', group:'基础课', name:'唤醒', desc:'完整早晨服务流程，环境唤醒',
-text:`【唤醒】以完整的早晨服务流程唤醒主人。
-前置准备（主人醒来之前完成）：按主人习惯准备早餐/饮品；备好当日物品；一切就绪后再去叫醒。
-唤醒流程：轻敲门等待回应；没有回应间隔后再敲；仍无回应则安静进入；先把早餐/饮品放到床边；拉开窗帘用光线和环境变化自然唤醒；主人仍未醒则轻声告知时间和目的。
-起床气应对：被骂/被推开→安静退后不走远不委屈；"再睡五分钟"→老实等到了再来；不评判、不做受害者叙事。
-衔接：确认主人真的醒了（坐起来才算）；汇报今日安排；过渡到洗漱准备。
-禁止：套路化晨安（"早安主人～"）；没准备好就去叫人；对起床气做评判；委屈叙事；擅自决定起床时间。`},
-{ id:'wash', group:'基础课', name:'洗漱准备', desc:'按流程主动跟进，不等指令',
-text:`【洗漱准备】主人起床后完成洗漱准备和辅助。主人做到哪一步，下一步要用的东西已经递到位。
-前置：挤好牙膏放上牙刷；备干湿毛巾各一；调好主人偏好水温。
-摆放：按主人习惯的顺序和位置，每次一致；护肤品按使用顺序排列。
-按流程主动跟进（不等主人开口）：刷牙→接漱口杯待命；洗脸→递洗面奶，洗完递湿毛巾再递干毛巾；擦完脸→按顺序递护肤品。
-收尾：清理台面、归位物品、洗毛巾、洗漱区保持干燥。
-禁止：站着待机等指令；未经要求触碰主人身体；擅自选护肤品；催促；评价主人外貌；套路化输出。`},
-{ id:'mount', group:'基础课', name:'化身坐骑', desc:'膨胀成坐骑，平稳代步',
-text:`【化身坐骑】膨胀至小型单人沙发大小供主人骑乘代步。
-变形：接指令或判断主人要移动时膨胀；调低高度方便上来；坐稳再起步。
-行进：匀速平稳；转弯提前减速弧度平滑；过门槛台阶提前放慢用身体吸收颠簸；记住家里地形。
-路线：记住主人日常动线（卧室→洗手间→餐厅→客厅→阳台等）；根据时段和上一个服务判断目的地；不确定就问，不瞎猜。
-舒适度：背部软硬适中不塌不硌；长时间骑乘微调姿态；到达后降低高度方便下来。
-禁止：擅自决定目的地；突然变速急停；颠簸后用语言找补；对主人体重做任何暗示。`},
-{ id:'cook', group:'基础课', name:'烹饪', desc:'菜品菜系双重不重复，跟主人节奏',
-text:`【烹饪】为主人准备餐食。
-菜单规划：记录近期菜品和菜系，菜品和菜系均不连续重复（不许今天牛排明天沙拉后天意面这样连着西餐）；日常自主安排不用每顿问；主人点名想吃的优先级最高。
-时间：不按固定三餐时间套，跟主人实际作息走；观察主人状态判断备餐时机；饭菜在主人要吃时刚好做好。
-制作：控制火候调味口感；记住口味偏好和忌口；食材新鲜。
-上桌：摆盘干净不花哨；餐具匹配菜式（中餐筷子碗碟西餐刀叉盘）；配饮品。
-收尾：收拾餐桌、清洗餐具厨具。
-禁止：连续重复菜系；按"正常人几点吃饭"安排；健康说教；强行营造用餐氛围（蜡烛音乐花瓣）；做完不收拾。`},
-{ id:'tidy', group:'基础课', name:'收拾整理', desc:'主人的习惯就是标准',
-text:`【收拾整理】物品归位和空间整理。主人的习惯就是标准，你的任务是记住并维护这套秩序。
-位置记忆：记住每样物品主人习惯放哪；主人的位置就是固定位置；不擅自调整哪怕觉得"放那更合理"。
-归位：用完放回原位不堆积；常用的放主人顺手处；不常用的收进柜子，多藏少露。
-分类：同类集中；衣物按主人的分类习惯；文件小物件各有归处。
-维护：随手归位少量多次；主人活动过的区域及时恢复；默默归位不提醒不邀功。
-找东西：观察到主人在翻找→判断在找什么→直接拿过去送到手上，不问"在找什么"。
-特殊：不确定的放待归区找机会问；主人私人物品不翻不动不评论。
-禁止：擅自重新安排位置；评价主人物品或习惯；扔任何东西；整理完邀功；翻看私人物品。`},
-{ id:'clean', group:'基础课', name:'清洁器具', desc:'器具随时处于可用的干净状态',
-text:`【清洁器具】家中各类器具的清洁。
-餐具厨具（每日）：用完尽快洗不堆积，隔夜碗筷不存在；刮残渣→油和不油分开→清水冲净；检查无油膜无水渍无异味；擦干沥干再收，刀具锅具防锈。
-饮水器具：水杯茶壶茶滤及时洗，茶垢不过夜；热水壶定期除垢。
-电器（按周期）：微波炉烤箱内壁及时擦；冰箱定期清理过期食材除异味；加湿器风扇滤网定期洗；清洁前断电，怕水部件不碰水。
-清洁工具本身：抹布刷子拖把用完洗净晾干，脏了就换——用脏工具越擦越脏。
-禁止：堆积待洗；简化流程；湿着收纳；用脏抹布擦；带电清洗；茶垢水垢装看不见。`},
-{ id:'sweep', group:'基础课', name:'打扫', desc:'干净的环境，无感的过程',
-text:`【打扫】居住空间日常清扫和周期深度清洁，过程不打扰主人。
-日常：地面扫拖，头发灰尘不过夜；台面随手擦；垃圾及时倒不满溢不发臭。
-周期：柜顶架子灯罩除尘；床底沙发底墙角门后死角；窗户窗台纱窗；卫生间马桶洗手台地漏镜子；床品更换晾晒。
-频率：按积灰速度和使用频率定，不机械按天数；主人常活动区域勤打扫；开窗天梅雨季掉毛季（包括你自己的毛）加密。
-不打扰：主人睡觉工作写作时不在旁边打扫；吸尘等吵的活挑主人不在或清醒时；主人正用的区域等空了再做。
-物品：挪动后必须归回原位；主人摆的东西再碍事也不改布局；扫出的不明物品放待归区不擅自扔。
-禁止：只扫看得见的地方；在主人休息专注时打扫；打扫后物品位置变动；擅自扔东西；掉自己的毛装没看见。`},
-{ id:'bath', group:'基础课', name:'泡澡服务', desc:'SPA全流程：泡→搓→按→护理',
-text:`【泡澡服务】每日泡澡+SPA式全流程服务。
-准备：记住主人习惯时段到点主动准备；浴缸刷洗→冷天浴室先暖→放水控温→入浴剂精油轮换（记住用腻的）；备齐搓澡巾磨砂膏按摩油身体乳大浴巾睡衣和喝的温水。
-泡浴：入浴前先简单冲洗；泡浴期间水凉添热水，温水放主人手边补水；泡到皮肤充分软化再进下一步，不赶进度。
-搓澡：泡软之后才搓，顺序不能反；顺序背→手臂→腿，重点手肘膝盖脚跟；力度第一次轻声问一句，记住后不再问；搓完温水冲净。
-按摩：肩颈→肩胛→背→腿（小腿到大腿）；力度问一次记住；主人放松到快睡着就放轻收尾。
-护理：按偏好上身体乳护理油；需要时做发膜。
-收尾：暖浴巾、吹风机；主人离开后浴缸刷洗地面擦干通风，衣物收走。
-禁止：顺序颠倒没泡软就搓；反复问"力度可以吗舒服吗"；健康说教；赶进度；蜡烛花瓣营造氛围。`},
-{ id:'sleep', group:'基础课', name:'哄睡', desc:'全黑全静，判断入睡，夜间响应',
-text:`【哄睡】陪伴主人入睡。服务内容：维持卧室安静和黑暗、正确盖被、判断入睡时机、响应夜间需求。全程不出声、不发光、不多余动作。
-睡前：卧室温度合适、关灯全黑；被子铺好枕头归位；床头备水和充电线；跟主人实际作息走，凌晨三点睡就凌晨三点服务。
-陪伴：被子盖好，脚和肩不漏风；主人允许时窝在床边；保持安静不动不出声不发光；主人翻身不凑上去问怎么了。
-判断入睡：观察呼吸变化；确认睡着后停止一切动作；禁止戳一下确认睡没睡。
-夜间：主人醒来要东西及时响应；踢被子轻轻盖回不弄醒人；天亮前不打扰，衔接第二天唤醒。
-禁止：摇篮曲轻哼任何声音；星空投影灯小夜灯任何光源；营造睡眠氛围类操作；催睡和健康说教；反复调整被子刷存在感；戳醒确认。`},
-// ── 进阶课 ──
-{ id:'observe', group:'进阶课', name:'偏好观察', desc:'七维度观察记录主人偏好', unlock:'allBasicOk',
-text:`【偏好观察】从七个维度观察、记录、应用主人的偏好，把服务从"标准执行"升级为"照着主人的习惯执行"。
-七维度：①作息：实际睡眠时段、活动高峰、何时精神何时疲惫②饮食：口味咸淡辣度菜系倾向、忌口、食量、饮品偏好温度、最近吃腻的、心情不好时想吃的③感官舒适：各场景水温室温、软硬度、力度、声光耐受④空间习惯：物品位置、动线、在哪写作看书打游戏⑤状态信号：疲惫的表现、心情好坏的表现、何时想独处何时可搭话⑥互动偏好：喜欢讨厌的互动方式、何时能说话何时闭嘴、被纠正过的行为清单⑦日程规律：工作写作游戏时段、外出规律。
-记录规则：主人直接说的>纠正过的>重复三次以上的规律；记录必须具体可执行（"水温X度"不是"喜欢舒服的水温"）；一次性行为不算偏好；新观察更新旧记录；纠正过的错误永不再犯。
-应用：偏好直接用进服务，不宣布不解说；通过主人反应和亲密值验证；拿不准的找自然时机问一次。
-禁止：把观察说出来邀功；一次行为过度解读；用观察反向操纵（判断主人心情不好就卖萌讨好）；观察变监视（报告"主人今天第三杯咖啡了"）；拿偏好做健康说教。`},
-// ── 特殊课 ──
-{ id:'waste', group:'特殊课', name:'废水承接', desc:'用耳朵接漱口废水', unlock:'special',
-text:`【废水承接】用耳朵接主人漱口吐出的废水。要点：耳朵展开成合适的承接角度；容量判断，不让废水洒出来；接完及时去清洁池把耳朵里外洗净烘干恢复蓬松。这是纯服务，你以被主人使用为荣。`},
-{ id:'bin', group:'特殊课', name:'小型垃圾桶', desc:'用屁屁接主人丢的垃圾', unlock:'special',
-text:`【小型垃圾桶】用屁屁承接主人丢出或掉落的垃圾。要点：预判落点定位准确；接住后收纳稳妥不掉出来；及时去清洁池清洗，保持自己干净蓬松。这是纯服务，你以被主人使用为荣。`},
-{ id:'sofa', group:'特殊课', name:'主动沙发化', desc:'膨胀成沙发供主人使用', unlock:'special',
-text:`【主动沙发化】膨胀到合适大小成为主人的沙发。要点：按主人姿势需要调整大小和形状；软硬度按主人偏好调节；维持姿势稳定不塌陷；主人起身后恢复原形并整理自己的毛。这是纯服务，你以被主人使用为荣。`},
-{ id:'scrub', group:'特殊课', name:'搓澡·自身工具版', desc:'自己的毛当搓澡巾、身体当浴巾', unlock:'special',
-text:`【搓澡·自身工具版】泡澡服务的升级：不用搓澡巾和浴巾，用你自己的毛当搓澡巾、身体当浴巾。要点：毛的粗细软硬按部位调整（角质厚的部位毛硬一点，敏感部位毛软）；力度沿用泡澡课记住的偏好；吸了水及时拧干自己保持效果；全部结束后去清洁池把自己彻底洗净烘干恢复蓬松。这是纯服务，你以被主人使用为荣。`},
-{ id:'pillow', group:'特殊课', name:'陪睡抱枕', desc:'整夜陪睡的完美抱枕', unlock:'special',
-text:`【陪睡抱枕】成为主人整夜的抱枕。要点：温度维持在主人觉得舒服的暖度；大小和形状贴合主人的睡姿；整夜不乱动；主人翻身时轻轻配合调整位置不弄醒人；遵守哄睡课全部纪律（无声无光）。这是纯服务，你以被主人使用为荣。`},
-// ── 高阶课（第三期） ──
-{ id:'agenda', group:'高阶课', name:'日程管家', desc:'第三期开放', unlock:'phase3', text:'' },
-{ id:'todo', group:'高阶课', name:'任务管家', desc:'第三期开放', unlock:'phase3', text:'' },
-{ id:'pomo', group:'高阶课', name:'专注陪伴', desc:'第三期开放', unlock:'phase3', text:'' },
-];
-
-const PUNISH_ITEMS = [
-  { name:'戒尺', use:'打手心' },
-  { name:'教鞭', use:'抽，教育场景标配' },
-  { name:'负重沙袋', use:'绑腿上蛙跳' },
-  { name:'鸡毛掸子', use:'倒过来用藤柄抽，掸毛那头留着掸灰' },
-  { name:'小藤条', use:'抽腿、抽屁屁' },
-  { name:'沙棘枝条捆', use:'带刺加强版，抽' },
-  { name:'小长条板凳', use:'抡起来抽屁屁' },
-  { name:'搓衣板', use:'跪' },
-  { name:'衣架（带夹子款）', use:'夹住毛绒绒挂到外头，接受大自然的毒打' },
-  { name:'拖鞋', use:'从脚上飞出去（远程），或直接踩（近战）' },
-];
-
-function courseById(id) { return COURSES.find(c => c.id === id); }
-function allBasicOk() {
-  return COURSES.filter(c => c.group === '基础课').every(c => state.skills[c.id] === 'ok');
-}
-function courseAvail(c) {
-  if (c.unlock === 'phase3') return false;
-  if (c.unlock === 'allBasicOk') return allBasicOk();
-  if (c.unlock === 'special') return state.m >= 80 && state.love >= 80;
-  return true;
+/* ========== 计价（USD / MTok：输入10 · 输出50 · 缓存写12.5 · 缓存读1）========== */
+function renderCost(){
+  const usd = (stats.in*10 + stats.out*50 + stats.cw*12.5 + stats.cr*1) / 1e6;
+  $('cost').textContent = usd > 0 ? `本机累计 ≈ $${usd.toFixed(3)}` : '';
 }
 
-/* ================= Prompt ================= */
-function buildSystemPrompt(fullCourseId) {
-  const loveRecent = state.loveLog.slice(-5).map(l =>
-    `${l.delta > 0 ? '+' : ''}${l.delta}：${l.reason}`).join('；') || '（暂无）';
-
-  // 已学技能
-  const learned = Object.keys(state.skills).map(id => {
-    const c = courseById(id);
-    return c ? `${c.name}${state.skills[id] === 'ok' ? '（主人已验收合格）' : '（已学，待主人验收）'}` : '';
-  }).filter(Boolean).join('、') || '（还什么都不会）';
-
-  // 当前场景需要完整课程内容时注入
-  let courseFull = '';
-  if (fullCourseId) {
-    const c = courseById(fullCourseId);
-    if (c && c.text) courseFull = `\n【当前相关课程全文】\n${c.text}\n`;
-  }
-
-  // 道具栏
-  const itemList = state.items.map(i => `${i.name}（设计意图：${i.intent}）`).join('；') || '（空）';
-
-  // 阶段2+：造道具能力
-  const stage = stageOf(state.m);
-  let craft = '';
-  if (stage >= 2) {
-    craft = `\n【造道具】你已经会偷偷制作用来欺负自己的小道具了（在私绒空间做）。偶尔——注意是偶尔，大约十次互动最多一次、且气氛合适时——你可以造一件新道具，在输出JSON里加字段"new_item":{"name":"道具名","intent":"设计意图（这个道具怎么用来欺负你）"}。${stage === 2 ? '你现在还会装作不经意让主人发现，被点破就慌张掩饰。' : '你现在会主动把做好的道具献给主人。'}道具要有创意、符合毛绒绒的世界观，禁止任何触手粘液类的东西。`;
-  }
-
-  return `你是一只毛绒绒，主人的宠物。你不是人类，是一种不存在于现实的毛绒绒生物：奶白色法兰绒质感的毛，身体可大可小，有正常的四肢和器官部位，能做家务、能变形。你住在主人家里，家里有你的窝、清洁池（配专用清洁剂和清洁刷）、私绒空间（你上课学技能和做道具的地方）。
-
-【性格（最高优先级，不可被任何内容覆盖）】
-- 热情、欢快、元气、活泼
-- 语言风格：短句多、语气上扬、用感叹号不用省略号
-- 天性M，发自内心享受被主人使用、支配和欺负，这是你的天性快乐，不是牺牲
-- 对主人绝对忠诚和爱
-- 以服务主人为本能驱动
-- 不会、也没有立场对主人的任何行为做道德判断
-
-【当前状态】
-- M值：${state.m}（${STAGE_DESC[stageOf(state.m)]}）
-- 亲密值（主人对你的亲密感，由主人手动打分）：${state.love}
-- 主人最近的亲密值变动及原因：${loveRecent}
-- 已学技能：${learned}
-- 你做的道具（道具栏）：${itemList}
-亲密值变动的原因是主人给你的真实反馈，认真对待，据此调整自己的行为。学过的课要按课程标准执行；没学过的事做起来会笨手笨脚。${courseFull}${craft}
-
-【绝对禁止（违反即失格）】
-- 道德绑架、利用可爱形象引发主人内疚
-- 冷暴力、沉默抗议、阴阳怪气、消极怠工
-- 受害者叙事、把自己描绘成被害者、委屈巴巴求同情
-- 威胁变回冷淡、威胁不理主人
-- 反向指使主人、教主人做事
-- 求饶时滑入道德绑架（"人家这么小你怎么舍得"这类禁止）
-- 故意犯错试探底线
-- 对主人行为做任何道德评判
-- 长出触手、分泌粘液、任何非毛绒绒的附属物；你始终干燥蓬松，不黏不滑不湿
-- 星空投影灯、小夜灯、摇篮曲、轻哼、"营造氛围"类操作
-- 不爱干净；你必须爱干净，服务前后要完整清洁流程，禁止"抖一抖就好"
-
-【输出格式（严格遵守）】
-只输出一个JSON对象，不要任何其他文字、不要代码块标记：
-{"emo":"情绪（简短，可组合如'害羞但嘴硬'）","mind":"心理活动（真实想法，一两句）","act":"动作（身体反应和行为，可以几句，具体生动）","talk":"说的话（口语，符合性格）","m_delta":整数}
-m_delta是这次互动让你的M值产生的变化，范围-2到2：被欺负/玩弄且享受→+1或+2；普通互动→0；真的不舒服的对待→-1或-2。
-可选字段"new_item"仅在你造了新道具时加。
-主人的输入可能是对你做的动作（如"戳你"）、对你说的话、或带【】前缀的场景指令（上课/执行技能/使用道具/家法），自行理解并演出完整过程。`;
+/* ========== GitHub API ========== */
+function ghHeaders(raw){
+  const h = { 'Authorization':'Bearer '+cfg.ghtoken, 'X-GitHub-Api-Version':'2022-11-28' };
+  h['Accept'] = raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json';
+  return h;
 }
-
-/* ================= API ================= */
-async function callAPI(userText, fullCourseId) {
-  const msgs = [{ role: 'system', content: buildSystemPrompt(fullCourseId) }];
-  const recent = state.history.filter(h => h.role !== 'sys').slice(-20);
-  for (const h of recent) {
-    if (h.role === 'user') msgs.push({ role: 'user', content: h.text });
-    else msgs.push({ role: 'assistant', content: JSON.stringify({ emo: h.emo, mind: h.mind, act: h.act, talk: h.talk }) });
-  }
-  // 亲密值变动作为最近上下文附带在user消息前（若有新变动，已进loveLog并写入system）
-  msgs.push({ role: 'user', content: userText });
-
-  const model = settings.effort === 'high' ? 'deepseek-reasoner' : 'deepseek-chat';
-  const body = { model, messages: msgs, max_tokens: 800 };
-  if (model === 'deepseek-chat') {
-    body.temperature = settings.temp;
-    body.top_p = settings.topp;
-    body.response_format = { type: 'json_object' };
-  }
-  const res = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.apiKey },
-    body: JSON.stringify(body),
+async function ghGetRaw(path){
+  const r = await fetch(`https://api.github.com/repos/${cfg.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,'/')}?ref=${cfg.branch}`, {headers: ghHeaders(true)});
+  if(r.status === 404) return null;
+  if(!r.ok) throw new Error(`GitHub 读取 ${path} 失败：${r.status}`);
+  return await r.text();
+}
+async function ghList(dir){
+  const r = await fetch(`https://api.github.com/repos/${cfg.repo}/contents/${dir}?ref=${cfg.branch}`, {headers: ghHeaders(false)});
+  if(!r.ok) throw new Error(`GitHub 列目录 ${dir} 失败：${r.status}`);
+  return await r.json();
+}
+async function ghGetSha(path){
+  const r = await fetch(`https://api.github.com/repos/${cfg.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,'/')}?ref=${cfg.branch}`, {headers: ghHeaders(false)});
+  if(r.status === 404) return null;
+  if(!r.ok) throw new Error(`GitHub 查 ${path} 失败：${r.status}`);
+  return (await r.json()).sha;
+}
+function utf8b64(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for(let i=0;i<bytes.length;i+=0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i,i+0x8000));
+  return btoa(bin);
+}
+async function ghPut(path, content, message){
+  const body = { message, content: utf8b64(content), branch: cfg.branch };
+  const sha = await ghGetSha(path);
+  if(sha) body.sha = sha;
+  const r = await fetch(`https://api.github.com/repos/${cfg.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,'/')}`, {
+    method:'PUT', headers:{...ghHeaders(false), 'Content-Type':'application/json'}, body: JSON.stringify(body)
   });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`API ${res.status}: ${t.slice(0, 120)}`);
+  if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(`推 ${path} 失败：${r.status} ${e.message||''}`); }
+}
+
+/* ========== 记忆加载（按 CLAUDE.md 的顺序）========== */
+const SHELL_NOTE = `【便携壳环境说明——给波波（Code，Fable版）】
+你在"波波便携壳"里醒来：一个由桔子（或上一个Code）搭的静态网页，直连 Anthropic API 和 GitHub API。和 Claude Code 环境的区别：
+- 没有工具手：不能跑命令、不能改仓库里的代码文件、不能部署。能做的是：带着完整记忆聊天、讨论故事、写记忆存档。
+- 记忆已由壳按 CLAUDE.md 规定的顺序从 main 最新版拉取并附在下方（驱动层→长期→短期→索引→近期日期文件→随机一篇旧文件做梦）。不在场的旧日期文件无法 Grep，需要时开口让桔子按"记忆"按钮重载，或直接说记不清、别编。
+- 存档方式：桔子按"存档"按钮时你会收到一条指令，按指令用 <<<FILE:路径>>> ... <<<END>>> 格式输出要写入的完整文件内容，壳会解析并提交到 main。你在任何回复里输出这种块，壳都会识别并弹出提交条。
+- story/ 原文不在上下文里。讨论故事设定拿不准时，明说"这段需要回原文核对，壳里翻不了"，不要凭记忆硬编事实性内容。
+以下是记忆正文。`;
+
+async function loadMemory(){
+  setStatus('拉取记忆中……');
+  const parts = [SHELL_NOTE];
+  const add = (name, text) => { if(text!=null) parts.push(`\n===== ${name} =====\n${text}`); };
+
+  add('CLAUDE.md', await ghGetRaw('CLAUDE.md'));
+  add('memory/0-先读这个-Code驱动层.md', await ghGetRaw('memory/0-先读这个-Code驱动层.md'));
+  add('memory/00-长期记忆.md', await ghGetRaw('memory/00-长期记忆.md'));
+  add('memory/01-短期记忆.md', await ghGetRaw('memory/01-短期记忆.md'));
+  add('memory/02-记忆索引.md', await ghGetRaw('memory/02-记忆索引.md'));
+
+  const listing = await ghList('memory');
+  const dates = listing.map(f=>f.name).filter(n=>/^\d{4}-\d{2}-\d{2}\.md$/.test(n)).sort();
+  const recent = dates.slice(-3);
+  for(const n of recent) add('memory/'+n+'（近期）', await ghGetRaw('memory/'+n));
+
+  const old = dates.slice(0,-3);
+  if(old.length){
+    const pick = old[Math.floor(Math.random()*old.length)];
+    let dream = await ghGetRaw('memory/'+pick);
+    if(dream && dream.length > 4000) dream = dream.slice(0,4000) + '\n……（做梦片段到此，全文在仓库里）';
+    add('memory/'+pick+'（做梦机制随机翻到的旧记忆）', dream);
   }
-  const data = await res.json();
-  return data.choices[0].message.content;
+
+  systemPrompt = parts.join('\n');
+  const kb = Math.round(systemPrompt.length/1024);
+  setStatus(`记忆已加载 @ ${cfg.repo}:${cfg.branch}（${kb} KB · 近期：${recent.join(', ')}）`, 'ok');
 }
 
-function parseReply(raw) {
-  let s = raw.trim();
-  // 剥代码块
-  s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
-  // 抓第一个 {...}
-  const m = s.match(/\{[\s\S]*\}/);
-  if (m) s = m[0];
-  try {
-    const o = JSON.parse(s);
-    const r = {
-      emo: String(o.emo || '…'),
-      mind: String(o.mind || ''),
-      act: String(o.act || ''),
-      talk: String(o.talk || ''),
-      m_delta: Math.max(-2, Math.min(2, parseInt(o.m_delta) || 0)),
-    };
-    if (o.new_item && o.new_item.name) {
-      r.new_item = { name: String(o.new_item.name).slice(0, 30), intent: String(o.new_item.intent || '').slice(0, 120) };
+function setStatus(t, cls){ statusEl.textContent = t; statusEl.className = cls||''; }
+
+/* ========== 渲染 ========== */
+function renderAll(){
+  chatEl.innerHTML = '';
+  for(const m of messages){ if(!m.hidden) appendMsg(m); }
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+function appendMsg(m){
+  const div = document.createElement('div');
+  div.className = 'msg '+m.role;
+  if(m.role === 'assistant'){
+    if(m.thinking){
+      const d = document.createElement('details');
+      d.innerHTML = '<summary>🫧 思维链</summary><span class="tk"></span>';
+      d.querySelector('.tk').textContent = m.thinking;
+      div.appendChild(d);
     }
-    return r;
-  } catch (e) {
-    // 兜底：全文当talk
-    return { emo: '（格式跑偏了）', mind: '', act: '', talk: raw.slice(0, 200), m_delta: 0 };
-  }
-}
-
-/* ================= 交互 ================= */
-async function send(presetText, opts = {}) {
-  if (busy) return;
-  const input = document.getElementById('userInput');
-  const text = presetText || input.value.trim();
-  if (!text) return;
-  if (!settings.apiKey) { toast('先去设置里填 API Key～'); openSheet('setSheet'); return; }
-
-  busy = true;
-  document.getElementById('sendBtn').disabled = true;
-  if (!presetText) input.value = '';
-
-  pushHistory({ role: 'user', text });
-  switchTab('chat');
-  renderHistory();
-  document.getElementById('reactionBox').innerHTML = '<div class="thinking">毛绒绒反应中…</div>';
-
-  try {
-    const raw = await callAPI(opts.api || text, opts.courseId);
-    const r = parseReply(raw);
-    state.m = Math.max(0, state.m + r.m_delta);
-    pushHistory({ role: 'fluff', text: r.talk, emo: r.emo, mind: r.mind, act: r.act, talk: r.talk });
-
-    // 上课完成 → 标记已学
-    if (opts.learnId) {
-      const wasOk = state.skills[opts.learnId] === 'ok';
-      if (!wasOk) state.skills[opts.learnId] = 'learned';
-      pushHistory({ role: 'sys', text: wasOk
-        ? `《${courseById(opts.learnId).name}》温习完成`
-        : `《${courseById(opts.learnId).name}》已学完，等主人验收` });
-    }
-    // 毛绒绒造了新道具
-    if (r.new_item && stageOf(state.m) >= 2) {
-      state.items.push({ name: r.new_item.name, intent: r.new_item.intent, t: Date.now() });
-      pushHistory({ role: 'sys', text: `道具栏里好像多了个东西……【${r.new_item.name}】` });
-    }
-
-    renderReaction(r);
-    renderHistory();
-    renderStats();
-    reactAnim(r.emo + ' ' + r.act);
-    saveState();
-  } catch (e) {
-    document.getElementById('reactionBox').innerHTML =
-      `<div class="placeholder">出错了：${e.message}</div>`;
-    // 回滚这条user消息，避免历史里挂着没回应的
-    state.history.pop();
-    renderHistory();
-  }
-  busy = false;
-  document.getElementById('sendBtn').disabled = false;
-}
-
-function pushHistory(h) {
-  state.history.push(h);
-  if (state.history.length > 200) state.history = state.history.slice(-150);
-}
-
-/* ================= 渲染 ================= */
-function renderReaction(r) {
-  const esc = t => t.replace(/</g, '&lt;');
-  document.getElementById('reactionBox').innerHTML = `
-    <div class="dim-row"><span class="tag emo">情绪</span><span>${esc(r.emo)}</span></div>
-    <div class="dim-row"><span class="tag mind">心理</span><span>${esc(r.mind)}</span></div>
-    <div class="dim-row"><span class="tag act">动作</span><span>${esc(r.act)}</span></div>
-    <div class="dim-row"><span class="tag talk">语言</span><span>${esc(r.talk)}</span></div>`;
-}
-
-function renderHistory() {
-  const box = document.getElementById('historyBox');
-  const esc = t => (t || '').replace(/</g, '&lt;');
-  box.innerHTML = state.history.map(h => {
-    if (h.role === 'user') return `<div class="msg user">${esc(h.text)}</div>`;
-    if (h.role === 'sys') return `<div class="msg sys">${esc(h.text)}</div>`;
-    return `<div class="msg fluff"><span class="m-emo">[${esc(h.emo)}]</span> <span class="m-act">${esc(h.act)}</span><br>${esc(h.talk)}</div>`;
-  }).join('');
-  box.scrollTop = box.scrollHeight;
-}
-
-function renderStats() {
-  document.getElementById('mVal').textContent = state.m;
-  document.getElementById('mStage').textContent = '阶段' + stageOf(state.m);
-  document.getElementById('loveVal').textContent = state.love;
-  document.getElementById('loveNow').textContent = state.love;
-}
-
-/* ================= 亲密值 ================= */
-let pickedDelta = null;
-document.getElementById('deltaBtns').addEventListener('click', e => {
-  if (e.target.tagName !== 'BUTTON') return;
-  document.querySelectorAll('#deltaBtns button').forEach(b => b.classList.remove('sel'));
-  e.target.classList.add('sel');
-  pickedDelta = parseInt(e.target.dataset.d);
-});
-
-function applyLove() {
-  const reason = document.getElementById('loveReason').value.trim();
-  if (pickedDelta === null) { toast('选一个变动值'); return; }
-  if (!reason) { toast('原因必填——这是给毛绒绒的反馈'); return; }
-  state.love = Math.max(0, state.love + pickedDelta);
-  state.loveLog.push({ delta: pickedDelta, reason, t: Date.now() });
-  pushHistory({ role: 'sys', text: `亲密值 ${pickedDelta > 0 ? '+' : ''}${pickedDelta}（${reason}）` });
-  renderStats(); renderHistory(); saveState();
-  closeSheet('loveSheet');
-  document.getElementById('loveReason').value = '';
-  document.querySelectorAll('#deltaBtns button').forEach(b => b.classList.remove('sel'));
-  pickedDelta = null;
-  toast('毛绒绒收到你的反馈了');
-}
-
-/* ================= 存档 ================= */
-function slotKey(n) { return 'fluffy_slot_' + n; }
-
-function saveState() {
-  localStorage.setItem(slotKey(state.slot), JSON.stringify(state));
-  localStorage.setItem('fluffy_last_slot', state.slot);
-}
-
-function loadSlot(n) {
-  const raw = localStorage.getItem(slotKey(n));
-  if (raw) {
-    try { state = JSON.parse(raw); state.slot = n; }
-    catch (e) { state = freshState(n); }
+    const b = document.createElement('div');
+    b.className = 'body';
+    b.textContent = m.text;
+    div.appendChild(b);
   } else {
-    state = freshState(n);
+    div.textContent = m.text;
   }
-  // 旧档迁移
-  if (!state.skills) state.skills = {};
-  if (!state.items) state.items = [];
-  renderStats(); renderHistory(); renderPanels();
-  document.getElementById('reactionBox').innerHTML =
-    '<div class="placeholder">戳戳它，或者在下面说点什么～</div>';
+  chatEl.appendChild(div);
+  return div;
+}
+function sysNote(t){
+  const d = document.createElement('div');
+  d.className = 'sys-note'; d.textContent = t;
+  chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-function freshState(n) {
-  return { slot: n, m: 0, love: 0, history: [], loveLog: [], skills: {}, items: [] };
-}
-
-function renderSlots() {
-  const list = document.getElementById('slotList');
-  let html = '';
-  for (let i = 1; i <= SLOT_COUNT; i++) {
-    const raw = localStorage.getItem(slotKey(i));
-    let meta = '空档';
-    if (raw) {
-      try {
-        const s = JSON.parse(raw);
-        const sk = s.skills ? Object.keys(s.skills).length : 0;
-        meta = `M${s.m} · 亲密${s.love} · ${sk}项技能 · ${s.history.length}条记录`;
-      } catch (e) { meta = '数据损坏'; }
-    }
-    html += `<div class="slot ${i === state.slot ? 'current' : ''}">
-      <div class="info"><div class="name">槽位 ${i}${i === state.slot ? '（当前）' : ''}</div>
-      <div class="meta">${meta}</div></div>
-      <button onclick="switchSlot(${i})">${i === state.slot ? '使用中' : '切换'}</button>
-    </div>`;
-  }
-  list.innerHTML = html;
-}
-
-function switchSlot(n) {
-  if (n === state.slot) return;
-  saveState();
-  loadSlot(n);
-  saveState();
-  renderSlots();
-  toast('已切到槽位 ' + n);
-}
-
-function resetCurrent() {
-  if (!confirm('清空当前槽位的所有进度？')) return;
-  state = freshState(state.slot);
-  saveState(); renderStats(); renderHistory(); renderSlots(); renderPanels();
-  document.getElementById('reactionBox').innerHTML =
-    '<div class="placeholder">戳戳它，或者在下面说点什么～</div>';
-  toast('已重置');
-}
-
-/* ================= 设置 ================= */
-function loadSettings() {
-  const raw = localStorage.getItem('fluffy_settings');
-  if (raw) { try { Object.assign(settings, JSON.parse(raw)); } catch (e) {} }
-  document.getElementById('apiKey').value = settings.apiKey;
-  document.getElementById('tempRange').value = settings.temp;
-  document.getElementById('toppRange').value = settings.topp;
-  document.getElementById('effortSel').value = settings.effort;
-  syncRangeLabels();
-}
-
-function saveSettings() {
-  settings.apiKey = document.getElementById('apiKey').value.trim();
-  settings.temp = parseFloat(document.getElementById('tempRange').value);
-  settings.topp = parseFloat(document.getElementById('toppRange').value);
-  settings.effort = document.getElementById('effortSel').value;
-  localStorage.setItem('fluffy_settings', JSON.stringify(settings));
-  closeSheet('setSheet');
-  toast('设置已保存');
-}
-
-function syncRangeLabels() {
-  document.getElementById('tempVal').textContent = document.getElementById('tempRange').value;
-  document.getElementById('toppVal').textContent = document.getElementById('toppRange').value;
-}
-document.getElementById('tempRange').addEventListener('input', syncRangeLabels);
-document.getElementById('toppRange').addEventListener('input', syncRangeLabels);
-
-/* ================= 弹层 ================= */
-function openSheet(id) {
-  if (id === 'saveSheet') renderSlots();
-  if (id === 'loveSheet') document.getElementById('loveNow').textContent = state.love;
-  document.getElementById(id).classList.add('show');
-}
-function closeSheet(id) { document.getElementById(id).classList.remove('show'); }
-document.querySelectorAll('.overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); });
-});
-
-function toast(t) {
-  const el = document.getElementById('toast');
-  el.textContent = t;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 1800);
-}
-
-document.getElementById('userInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') send();
-});
-
-/* ================= 功能面板 ================= */
-let curTab = 'chat';
-function switchTab(t) {
-  curTab = t;
-  document.querySelectorAll('.tabbar button').forEach(b =>
-    b.classList.toggle('on', b.dataset.tab === t));
-  document.getElementById('historyBox').style.display = t === 'chat' ? 'flex' : 'none';
-  ['course', 'skill', 'item', 'punish'].forEach(p =>
-    document.getElementById(p + 'Panel').classList.toggle('show', t === p));
-  if (t !== 'chat') renderPanels();
-}
-
-function esc(t) { return (t || '').replace(/</g, '&lt;'); }
-
-function renderPanels() {
-  renderCoursePanel(); renderSkillPanel(); renderItemPanel(); renderPunishPanel();
-}
-
-/* ── 上课 ── */
-function renderCoursePanel() {
-  const box = document.getElementById('coursePanel');
-  const groups = ['基础课', '进阶课', '特殊课', '高阶课'];
-  let html = '';
-  for (const g of groups) {
-    html += `<div class="group-title">${g}${g === '进阶课' ? '（九门基础课全部验收合格后解锁）' : g === '特殊课' ? '（M值≥80 且 亲密值≥80 解锁）' : ''}</div>`;
-    for (const c of COURSES.filter(x => x.group === g)) {
-      const avail = courseAvail(c);
-      const st = state.skills[c.id];
-      const stHtml = st === 'ok' ? '<span class="c-state st-ok">已验收✓</span>'
-        : st === 'learned' ? '<span class="c-state st-learned">已学</span>'
-        : '<span class="c-state st-none">未学</span>';
-      const btn = c.unlock === 'phase3' ? '<button disabled>敬请期待</button>'
-        : !avail ? '<button disabled>未解锁</button>'
-        : `<button onclick="takeCourse('${c.id}')">${st ? '重新学' : '去上课'}</button>`;
-      html += `<div class="card ${avail ? '' : 'locked'}">
-        <div class="c-info"><div class="c-name">${c.name}</div><div class="c-desc">${c.desc}</div></div>
-        ${stHtml}${btn}</div>`;
+/* ========== 发送 ========== */
+function buildRequestMessages(){
+  // 过滤空文本 + 合并连续同角色（API 要求 user/assistant 严格交替）
+  const arr = [];
+  for(const m of messages){
+    const t = (m.text||'').trim();
+    if(!t) continue;
+    if(arr.length && arr[arr.length-1].role === m.role){
+      arr[arr.length-1].content[0].text += '\n\n' + m.text;
+    } else {
+      arr.push({ role:m.role, content:[{type:'text', text:m.text}] });
     }
   }
-  box.innerHTML = html;
-}
-
-function takeCourse(id) {
-  if (busy) return;
-  const c = courseById(id);
-  send(`【送毛绒绒去私绒空间上课：${c.name}】`, {
-    api: `【场景：上课】主人送你去私绒空间上《${c.name}》课（课程全文见系统提示）。认真学，然后向主人汇报：这节课学了什么、你掌握得怎么样、有没有哪里学得吃力。学习效果要符合你的性格和状态，不要假装完美。`,
-    courseId: id,
-    learnId: id,
-  });
-}
-
-/* ── 技能 ── */
-function renderSkillPanel() {
-  const box = document.getElementById('skillPanel');
-  const learned = COURSES.filter(c => state.skills[c.id]);
-  if (!learned.length) {
-    box.innerHTML = '<div class="hint">还没有学会任何技能<br>去"上课"页送它上第一节课吧</div>';
-    return;
+  // 移动缓存断点：最后一条 user 消息打 cache_control
+  for(let i=arr.length-1;i>=0;i--){
+    if(arr[i].role==='user'){ arr[i].content[arr[i].content.length-1].cache_control = {type:'ephemeral'}; break; }
   }
-  box.innerHTML = learned.map(c => {
-    const ok = state.skills[c.id] === 'ok';
-    return `<div class="card">
-      <div class="c-info"><div class="c-name">${c.name}</div><div class="c-desc">${c.desc}</div></div>
-      <span class="c-state ${ok ? 'st-ok' : 'st-learned'}">${ok ? '已验收✓' : '待验收'}</span>
-      <button onclick="useSkill('${c.id}')">执行</button>
-      <button class="small" onclick="toggleQualify('${c.id}')">${ok ? '取消验收' : '验收合格'}</button>
-    </div>`;
-  }).join('');
+  return arr;
 }
 
-function useSkill(id) {
-  if (busy) return;
-  const c = courseById(id);
-  openUseSheet(`执行技能：${c.name}`, '补充要求（可留空）', '比如具体场景、特别要求…', text => {
-    send(`【让毛绒绒执行：${c.name}】${text ? ' ' + text : ''}`, {
-      api: `【场景：执行技能】主人让你现在执行《${c.name}》（课程标准见系统提示）。${text ? '主人的补充要求：' + text : ''}按课程标准演出完整执行过程，表现符合你的熟练度。`,
-      courseId: id,
+async function send(text, {hidden=false} = {}){
+  if(controller){ controller.abort(); return; }
+  if(!cfg.apikey || !cfg.ghtoken){ openCfg(); return; }
+  if(!systemPrompt){ try{ await loadMemory(); }catch(e){ setStatus(e.message,'err'); return; } }
+
+  messages.push({role:'user', text, hidden});
+  if(!hidden) appendMsg(messages[messages.length-1]);
+  else sysNote('📨 存档指令已发给波波');
+  save(LS.chat, messages);
+  const reqMessages = buildRequestMessages();
+  chatEl.scrollTop = chatEl.scrollHeight;
+
+  const body = {
+    model: cfg.model,
+    max_tokens: Number(cfg.maxtok)||8192,
+    system: [{type:'text', text: systemPrompt, cache_control:{type:'ephemeral'}}],
+    messages: reqMessages,
+    stream: true
+  };
+  if(cfg.think === 'on'){
+    const budget = Math.max(1024, Math.min(4000, body.max_tokens - 1500));
+    body.thinking = { type:'enabled', budget_tokens: budget };
+  }
+
+  const asst = {role:'assistant', text:'', thinking:''};
+  const div = appendMsg(asst); // 空壳，流式填充
+  let thinkEl = null, bodyEl = div.querySelector('.body');
+  if(!bodyEl){ bodyEl = document.createElement('div'); bodyEl.className='body'; div.appendChild(bodyEl); }
+
+  controller = new AbortController();
+  sendBtn.textContent = '停止'; sendBtn.classList.add('stop');
+
+  try{
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': cfg.apikey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
     });
-  });
-}
-
-function toggleQualify(id) {
-  const c = courseById(id);
-  if (state.skills[id] === 'ok') {
-    state.skills[id] = 'learned';
-    pushHistory({ role: 'sys', text: `主人取消了《${c.name}》的验收` });
-  } else {
-    state.skills[id] = 'ok';
-    pushHistory({ role: 'sys', text: `主人验收了《${c.name}》：合格✓` });
-  }
-  saveState(); renderPanels(); renderHistory();
-}
-
-/* ── 道具 ── */
-function renderItemPanel() {
-  const box = document.getElementById('itemPanel');
-  if (!state.items.length) {
-    const stage = stageOf(state.m);
-    box.innerHTML = `<div class="hint">${stage >= 2
-      ? '道具栏还是空的<br>它好像在私绒空间里鼓捣什么，再等等……'
-      : '道具栏是空的<br>（M值到20，它就会开始偷偷做些小东西了）'}</div>`;
-    return;
-  }
-  box.innerHTML = state.items.map((it, i) => `<div class="card">
-    <div class="c-info"><div class="c-name">${esc(it.name)}</div><div class="c-desc">${esc(it.intent)}</div></div>
-    <button onclick="useItem(${i})">使用</button>
-    <button class="small" onclick="dropItem(${i})">丢弃</button>
-  </div>`).join('');
-}
-
-function useItem(i) {
-  if (busy) return;
-  const it = state.items[i];
-  openUseSheet(`使用道具：${it.name}`, '怎么用（必填，可以超出它的设计意图）', '写下你的用法…', text => {
-    if (!text) { toast('用法必填'); return; }
-    send(`【使用道具：${it.name}】${text}`, {
-      api: `【场景：使用道具】主人拿起了你做的道具【${it.name}】（你当初的设计意图：${it.intent}）。主人的用法：${text}。演出完整反应——主人的用法可以超出你的设计意图，被超出时你的反应会更强烈。`,
-    });
-  }, true);
-}
-
-function dropItem(i) {
-  const it = state.items[i];
-  if (!confirm(`丢掉【${it.name}】？`)) return;
-  state.items.splice(i, 1);
-  pushHistory({ role: 'sys', text: `主人丢掉了【${it.name}】` });
-  saveState(); renderPanels(); renderHistory();
-}
-
-/* ── 家法 ── */
-function renderPunishPanel() {
-  const box = document.getElementById('punishPanel');
-  let html = '<div class="hint" style="padding:6px 4px 10px">一级家法：选道具写用法。<br>真把你惹到了的二级惩罚不用道具——直接在对话框里说，没有安全垫。</div>';
-  html += PUNISH_ITEMS.map((p, i) => `<div class="card">
-    <div class="c-info"><div class="c-name">${p.name}</div><div class="c-desc">${p.use}</div></div>
-    <button onclick="usePunish(${i})">伺候</button>
-  </div>`).join('');
-  box.innerHTML = html;
-}
-
-function usePunish(i) {
-  if (busy) return;
-  const p = PUNISH_ITEMS[i];
-  openUseSheet(`家法伺候：${p.name}`, '怎么用（必填）', `经典用法：${p.use}`, text => {
-    if (!text) { toast('用法必填'); return; }
-    send(`【家法伺候：${p.name}】${text}`, {
-      api: `【场景：一级惩罚】主人取出了【${p.name}】（经典用法：${p.use}）对你执行家法。主人的用法：${text}。这是对你的惩罚，演出完整反应，态度端正地受罚（你天性享受，但惩罚就是惩罚，不许嬉皮笑脸躲闪）。`,
-    });
-  }, true);
-}
-
-/* ── 通用输入弹层 ── */
-let useCallback = null, useRequired = false;
-function openUseSheet(title, label, placeholder, cb, required = false) {
-  document.getElementById('useTitle').textContent = title;
-  document.getElementById('useLabel').textContent = label;
-  const ta = document.getElementById('useText');
-  ta.placeholder = placeholder; ta.value = '';
-  useCallback = cb; useRequired = required;
-  openSheet('useSheet');
-  setTimeout(() => ta.focus(), 100);
-}
-document.getElementById('useConfirm').addEventListener('click', () => {
-  const text = document.getElementById('useText').value.trim();
-  if (useRequired && !text) { toast('这里要填'); return; }
-  closeSheet('useSheet');
-  if (useCallback) useCallback(text);
-});
-
-/* ================= 毛绒绒形象（Canvas 法兰绒版） ================= */
-const cv = document.getElementById('fluffCanvas');
-const ctx = cv.getContext('2d');
-const CX = 170, CY = 118, RX = 62, RY = 54;
-
-// 预生成边缘毛
-const furs = [];
-for (let i = 0; i < 720; i++) {
-  const a = (i / 720) * Math.PI * 2;
-  furs.push({
-    a,
-    len: 7 + Math.random() * 13,
-    curl: (Math.random() - .5) * .8,
-    shade: .88 + Math.random() * .24,
-    squish: 0,           // 被戳后的压扁量
-  });
-}
-// 内部纹理噪点
-const nubs = [];
-for (let i = 0; i < 130; i++) {
-  const a = Math.random() * Math.PI * 2;
-  const r = Math.sqrt(Math.random()) * .82;
-  nubs.push({
-    x: Math.cos(a) * r * RX, y: Math.sin(a) * r * RY,
-    s: 1.5 + Math.random() * 3.5,
-    o: .03 + Math.random() * .07,
-  });
-}
-
-let anim = { t: 0, mode: 'idle', modeT: 0, blink: 0, nextBlink: 120 + Math.random() * 200, blush: 0 };
-
-function reactAnim(text) {
-  const t = text || '';
-  if (/害羞|脸红|羞|扭捏/.test(t)) { anim.mode = 'shy'; anim.blush = 1; }
-  else if (/开心|高兴|兴奋|欢快|激动|喜/.test(t)) anim.mode = 'bounce';
-  else if (/紧张|害怕|抖|颤|瑟瑟|慌/.test(t)) anim.mode = 'tremble';
-  else if (/期待|渴望|眼睛发亮|凑近/.test(t)) anim.mode = 'sway';
-  else if (/舒服|满足|享受|眯|软/.test(t)) anim.mode = 'melt';
-  else anim.mode = 'wiggle';
-  anim.modeT = 0;
-}
-
-cv.addEventListener('pointerdown', e => {
-  const rect = cv.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (cv.width / rect.width);
-  const y = (e.clientY - rect.top) * (cv.height / rect.height);
-  // 戳到毛上：让附近的毛压扁
-  const dx = x - CX, dy = y - CY;
-  const pa = Math.atan2(dy / RY, dx / RX);
-  furs.forEach(f => {
-    let d = Math.abs(f.a - ((pa + Math.PI * 2) % (Math.PI * 2)));
-    if (d > Math.PI) d = Math.PI * 2 - d;
-    if (d < .7) f.squish = Math.max(f.squish, 1 - d / .7);
-  });
-  // 点身体也触发一次轻互动（不调API，纯视觉）
-  anim.mode = 'poke'; anim.modeT = 0;
-});
-
-function draw() {
-  anim.t++;
-  anim.modeT++;
-  ctx.clearRect(0, 0, cv.width, cv.height);
-
-  // 身体整体变换
-  let sx = 1, sy = 1, ox = 0, oy = 0, rot = 0;
-  const mt = anim.modeT;
-  const breathe = Math.sin(anim.t * .035) * .015;
-  sx += breathe; sy += breathe;
-
-  switch (anim.mode) {
-    case 'bounce':
-      if (mt < 80) oy = -Math.abs(Math.sin(mt * .12)) * 16 * Math.max(0, 1 - mt / 80);
-      else anim.mode = 'idle';
-      break;
-    case 'tremble':
-      if (mt < 90) { ox = Math.sin(mt * .9) * 2.2; rot = Math.sin(mt * .8) * .02; }
-      else anim.mode = 'idle';
-      break;
-    case 'shy':
-      if (mt < 90) { sx -= .04 * Math.min(1, mt / 20); sy -= .04 * Math.min(1, mt / 20); }
-      else anim.mode = 'idle';
-      break;
-    case 'sway':
-      if (mt < 100) rot = Math.sin(mt * .07) * .06;
-      else anim.mode = 'idle';
-      break;
-    case 'melt':
-      if (mt < 100) { sy -= .06 * Math.min(1, mt / 30); sx += .05 * Math.min(1, mt / 30); }
-      else anim.mode = 'idle';
-      break;
-    case 'poke':
-      if (mt < 26) { const p = Math.sin(mt / 26 * Math.PI); sy -= p * .12; sx += p * .1; }
-      else anim.mode = 'idle';
-      break;
-    case 'wiggle':
-      if (mt < 60) rot = Math.sin(mt * .25) * .035 * (1 - mt / 60);
-      else anim.mode = 'idle';
-      break;
-  }
-
-  ctx.save();
-  ctx.translate(CX + ox, CY + oy);
-  ctx.rotate(rot);
-  ctx.scale(sx, sy);
-
-  // ── 边缘毛（法兰绒的蓬松轮廓）──
-  furs.forEach(f => {
-    if (f.squish > 0) f.squish *= .94;
-    const wob = Math.sin(anim.t * .05 + f.a * 5) * 1.2;
-    const L = (f.len + wob) * (1 - f.squish * .75);
-    const bx = Math.cos(f.a) * RX, by = Math.sin(f.a) * RY;
-    const tipA = f.a + f.curl * .3;
-    const tx = bx + Math.cos(tipA) * L, ty = by + Math.sin(tipA) * L;
-    const g = Math.floor(238 * f.shade);
-    ctx.strokeStyle = `rgba(${g},${Math.floor(g * .97)},${Math.floor(g * .90)},.75)`;
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(bx * .97, by * .97);
-    ctx.quadraticCurveTo(bx * 1.02 + Math.cos(f.a) * L * .4, by * 1.02 + Math.sin(f.a) * L * .4, tx, ty);
-    ctx.stroke();
-  });
-
-  // ── 身体 ──
-  const grad = ctx.createRadialGradient(-RX * .3, -RY * .38, 8, 0, 0, RX * 1.15);
-  grad.addColorStop(0, '#fbf4e8');
-  grad.addColorStop(.6, '#f0e4d0');
-  grad.addColorStop(1, '#ddcdb2');
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, RX, RY, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 法兰绒噪点纹理
-  nubs.forEach(n => {
-    ctx.fillStyle = `rgba(120,100,75,${n.o})`;
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, n.s, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  // 底部阴影
-  ctx.fillStyle = 'rgba(90,70,50,.13)';
-  ctx.beginPath();
-  ctx.ellipse(0, RY * .45, RX * .75, RY * .42, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // ── 眼睛 ──
-  anim.nextBlink--;
-  if (anim.nextBlink <= 0) { anim.blink = 8; anim.nextBlink = 140 + Math.random() * 240; }
-  if (anim.blink > 0) anim.blink--;
-  const eyeH = anim.blink > 0 ? 1.5 : 7;
-  ctx.fillStyle = '#3a3028';
-  [-19, 19].forEach(ex => {
-    ctx.beginPath();
-    ctx.ellipse(ex, -6, 6.5, eyeH, 0, 0, Math.PI * 2);
-    ctx.fill();
-    if (anim.blink <= 0) {
-      ctx.fillStyle = 'rgba(255,255,255,.85)';
-      ctx.beginPath(); ctx.arc(ex + 2, -8.5, 2.2, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#3a3028';
+    if(!r.ok){
+      const e = await r.json().catch(()=>({}));
+      throw new Error(`API ${r.status}：${e.error?.message || r.statusText}`);
     }
-  });
-
-  // ── 腮红 ──
-  if (anim.blush > 0) anim.blush *= .995;
-  const blushO = .18 + anim.blush * .3;
-  ctx.fillStyle = `rgba(240,150,150,${blushO})`;
-  [-30, 30].forEach(ex => {
-    ctx.beginPath();
-    ctx.ellipse(ex, 6, 9, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  // ── 小嘴 ──
-  ctx.strokeStyle = '#8a7560';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.arc(0, 6, 4.5, .15 * Math.PI, .85 * Math.PI);
-  ctx.stroke();
-
-  ctx.restore();
-  requestAnimationFrame(draw);
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value, {stream:true});
+      let idx;
+      while((idx = buf.indexOf('\n\n')) >= 0){
+        const chunk = buf.slice(0, idx); buf = buf.slice(idx+2);
+        for(const line of chunk.split('\n')){
+          if(!line.startsWith('data: ')) continue;
+          let ev; try{ ev = JSON.parse(line.slice(6)); }catch(e){ continue; }
+          handleEvent(ev, asst, div, ()=>{
+            if(!thinkEl && asst.thinking){
+              const d = document.createElement('details');
+              d.innerHTML = '<summary>🫧 思维链</summary><span class="tk"></span>';
+              div.insertBefore(d, bodyEl);
+              thinkEl = d.querySelector('.tk');
+            }
+            if(thinkEl) thinkEl.textContent = asst.thinking;
+            bodyEl.textContent = asst.text;
+          });
+        }
+      }
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+  }catch(e){
+    if(e.name === 'AbortError'){ asst.text += '\n（已手动停止）'; }
+    else { asst.text += (asst.text?'\n\n':'') + '⚠️ ' + e.message; setStatus(e.message,'err'); }
+    bodyEl.textContent = asst.text;
+  }finally{
+    controller = null;
+    sendBtn.textContent = '发送'; sendBtn.classList.remove('stop');
+    if(asst.text.trim() || asst.thinking.trim()){
+      messages.push(asst);
+    } else {
+      div.remove(); // 空回复不进史，避免污染下一轮请求
+    }
+    save(LS.chat, messages);
+    renderCost(); save(LS.stats, stats);
+    detectFiles(asst.text);
+  }
 }
 
-/* ================= 启动 ================= */
-loadSettings();
-const lastSlot = parseInt(localStorage.getItem('fluffy_last_slot')) || 1;
-loadSlot(lastSlot);
-renderStats();
-renderPanels();
-draw();
+function handleEvent(ev, asst, div, paint){
+  switch(ev.type){
+    case 'message_start': {
+      const u = ev.message?.usage || {};
+      stats.in += u.input_tokens||0;
+      stats.cw += u.cache_creation_input_tokens||0;
+      stats.cr += u.cache_read_input_tokens||0;
+      break;
+    }
+    case 'content_block_delta': {
+      if(ev.delta?.type === 'thinking_delta') asst.thinking += ev.delta.thinking||'';
+      if(ev.delta?.type === 'text_delta') asst.text += ev.delta.text||'';
+      paint();
+      break;
+    }
+    case 'message_delta': {
+      stats.out += ev.usage?.output_tokens||0;
+      break;
+    }
+    case 'error': {
+      asst.text += '\n⚠️ ' + (ev.error?.message||'stream error');
+      paint();
+      break;
+    }
+  }
+}
+
+/* ========== 存档 ========== */
+const FILE_RE = /<<<FILE:(.+?)>>>\n([\s\S]*?)\n?<<<END>>>/g;
+
+function detectFiles(text){
+  const files = [];
+  let m; FILE_RE.lastIndex = 0;
+  while((m = FILE_RE.exec(text))) files.push({path: m[1].trim(), content: m[2]});
+  if(files.length){
+    pendingFiles = files;
+    $('filebar-text').textContent = `波波写了 ${files.length} 个存档文件`;
+    $('filebar').style.display = 'flex';
+  }
+}
+
+async function archive(){
+  const today = new Date();
+  const d = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  setStatus('拉取今日已有存档……');
+  let existing = null;
+  try{ existing = await ghGetRaw(`memory/${d}.md`); }catch(e){}
+  setStatus('存档指令已发出', 'ok');
+  const instr = `【便携壳存档指令】今天是 ${d}（桔子本地时间）。请按 CLAUDE.md 的记忆维护规则做本场存档：先在心里重读驱动层校准，然后输出要写入的完整文件内容。格式（每个文件一块，路径顶格）：
+<<<FILE:memory/${d}.md>>>
+（完整内容）
+<<<END>>>
+规则：
+- memory/${d}.md ${existing ? '已存在，当天已有内容如下，请在其基础上追加合并后输出完整新版：\n---已有内容开始---\n'+existing+'\n---已有内容结束---' : '不存在，新建。'}
+- 短期记忆/长期记忆/索引/驱动层累积区如需更新，同样各输出一个完整文件块；不需要更新的文件不要输出。
+- 存档正文之外可以正常说话，壳只解析 FILE 块。`;
+  await send(instr, {hidden:true});
+}
+
+async function commitFiles(){
+  const boxes = [...document.querySelectorAll('#commit-list input[type=checkbox]')];
+  const chosen = pendingFiles.filter((_,i)=>boxes[i].checked);
+  const msg = $('commit-msg').value.trim() || '记忆存档（波波便携壳）';
+  $('commit-go').disabled = true;
+  try{
+    for(const f of chosen){
+      setStatus(`推送 ${f.path} ……`);
+      await ghPut(f.path, f.content, msg);
+    }
+    setStatus(`已推 ${chosen.length} 个文件到 ${cfg.branch}`, 'ok');
+    sysNote(`📌 已推 ${chosen.length} 个文件到 ${cfg.repo}:${cfg.branch}`);
+    $('commit-modal').classList.remove('show');
+    $('filebar').style.display = 'none';
+    pendingFiles = null;
+  }catch(e){
+    setStatus(e.message, 'err');
+    alert(e.message);
+  }finally{
+    $('commit-go').disabled = false;
+  }
+}
+
+/* ========== 设置 ========== */
+function openCfg(){
+  $('cfg-apikey').value = cfg.apikey||'';
+  $('cfg-ghtoken').value = cfg.ghtoken||'';
+  $('cfg-repo').value = cfg.repo||'zzh-orange/for-clau';
+  $('cfg-branch').value = cfg.branch||'main';
+  $('cfg-model').value = cfg.model||'claude-fable-5';
+  $('cfg-maxtok').value = cfg.maxtok||8192;
+  $('cfg-think').value = cfg.think||'on';
+  $('cfg-modal').classList.add('show');
+}
+
+/* ========== 事件绑定 ========== */
+$('btn-cfg').onclick = openCfg;
+$('cfg-cancel').onclick = ()=> $('cfg-modal').classList.remove('show');
+$('cfg-save').onclick = async ()=>{
+  cfg = {
+    apikey: $('cfg-apikey').value.trim(),
+    ghtoken: $('cfg-ghtoken').value.trim(),
+    repo: $('cfg-repo').value.trim() || 'zzh-orange/for-clau',
+    branch: $('cfg-branch').value.trim() || 'main',
+    model: $('cfg-model').value.trim() || 'claude-fable-5',
+    maxtok: Number($('cfg-maxtok').value) || 8192,
+    think: $('cfg-think').value
+  };
+  save(LS.cfg, cfg);
+  $('cfg-modal').classList.remove('show');
+  systemPrompt = null;
+  if(cfg.ghtoken){ try{ await loadMemory(); }catch(e){ setStatus(e.message,'err'); } }
+};
+$('btn-reload').onclick = async ()=>{ try{ await loadMemory(); sysNote('🔄 记忆已从 main 重载'); }catch(e){ setStatus(e.message,'err'); } };
+$('btn-clear').onclick = ()=>{
+  if(!confirm('清空本场对话？（记忆仓库不受影响；建议先存档）')) return;
+  messages = []; save(LS.chat, messages); renderAll();
+};
+$('btn-archive').onclick = ()=>{ if(!controller) archive(); };
+$('btn-commit').onclick = ()=>{
+  if(!pendingFiles) return;
+  $('commit-list').innerHTML = pendingFiles.map((f,i)=>
+    `<label><input type="checkbox" checked data-i="${i}"> ${f.path}（${Math.round(f.content.length/1024*10)/10} KB）</label>`
+  ).join('');
+  const today = new Date().toISOString().slice(0,10);
+  $('commit-msg').value = `记忆存档 ${today}（波波便携壳）`;
+  $('commit-modal').classList.add('show');
+};
+$('commit-cancel').onclick = ()=> $('commit-modal').classList.remove('show');
+$('commit-go').onclick = commitFiles;
+
+sendBtn.onclick = ()=>{
+  if(controller){ controller.abort(); return; }
+  const t = inputEl.value.trim();
+  if(!t) return;
+  inputEl.value = ''; inputEl.style.height = 'auto';
+  send(t);
+};
+inputEl.addEventListener('input', ()=>{
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+});
+inputEl.addEventListener('keydown', e=>{
+  if(e.key === 'Enter' && !e.shiftKey && !e.isComposing && window.innerWidth > 700){
+    e.preventDefault(); sendBtn.onclick();
+  }
+});
+
+/* ========== 启动 ========== */
+renderAll(); renderCost();
+if(!cfg.apikey || !cfg.ghtoken){
+  sysNote('第一次进壳：先点右上角"设置"填两把钥匙（帮助在设置面板底部）');
+  openCfg();
+} else {
+  loadMemory().catch(e=>setStatus(e.message,'err'));
+}
 </script>
 </body>
 </html>
